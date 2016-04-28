@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<buildTargets>
+<default version="4">
+<default>true</default>
+<project/>
+<target>telosb</target>
+<make-extras>
+<extra name="install">
+<parameter ask="false" name="Mote Id">FTWY3LUM</parameter>
+</extra>
+</make-extras>
+<includes/>
+<excludes>
+<exclude>.*\.svn.*</exclude>
+</excludes>
+<typedefs/>
+<macros/>
+<boards/>
+<no-std-incl>false</no-std-incl>
+<component/>
+<component-file>/MiniProject/src/MainAppC.nc</component-file>
+<include-last-build>true</include-last-build>
+<include-env-default-paths>true</include-env-default-paths>
+<environment_variables/>
+</default>
+<client-data/>
+</buildTargets>
