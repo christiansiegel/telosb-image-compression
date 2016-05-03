@@ -12,6 +12,6 @@ implementation {
     FlashC.BlockWrite->BlockStorageC.BlockWrite;
 	BlinkC.Boot->MainC.Boot;
 	BlinkC.Timer0->Timer0;
-	BlinkC.Leds->LedsC;
-	BlinkC.Flash->FlashC;
+	BlinkC.Leds->LedsC.Leds;
+	BlinkC.Flash->FlashC.Flash;
 }
