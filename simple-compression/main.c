@@ -20,36 +20,36 @@ MU_TEST(test_compress1)
 {
     uncompressed[0] = 0b01000010;
     uncompressed[1] = 0b11111111;
-    uncompressed[2] = 0b00000000;
+    uncompressed[2] = 0b01110000;
     uncompressed[3] = 0b11111111; 
-    uncompressed[4] = 0b00000000;
+    uncompressed[4] = 0b00000110;
     uncompressed[5] = 0b11111111;
-    uncompressed[6] = 0b00000000;
-    uncompressed[7] = 0b11111111;            
+    uncompressed[6] = 0b00011000;
+    uncompressed[7] = 0b11001101;            
     
     encode1(uncompressed, compressed);
 
-	mu_assert_int_eq(0b01000011, compressed[0]);
-	mu_assert_int_eq(0b11111100, compressed[1]);
-	mu_assert_int_eq(0b00000111, compressed[2]);
-	mu_assert_int_eq(0b11110000, compressed[3]);
-	mu_assert_int_eq(0b00011111, compressed[4]);
-	mu_assert_int_eq(0b11000000, compressed[5]);
-	mu_assert_int_eq(0b01111111, compressed[6]);
+	mu_assert_int_eq(0b01000010, compressed[0]);
+	mu_assert_int_eq(0b11111111, compressed[1]);
+	mu_assert_int_eq(0b01110001, compressed[2]);
+	mu_assert_int_eq(0b11111110, compressed[3]);
+	mu_assert_int_eq(0b00000110, compressed[4]);
+	mu_assert_int_eq(0b11111111, compressed[5]);
+	mu_assert_int_eq(0b00011001, compressed[6]);
 }
 
 MU_TEST(test_compress2)
 {
     uncompressed[0] = 0b01000110;
     uncompressed[1] = 0b11111111;
-    uncompressed[2] = 0b00000000;
-    uncompressed[3] = 0b11111111;          
+    uncompressed[2] = 0b00001110;
+    uncompressed[3] = 0b11100101;          
     
     encode2(uncompressed, compressed);
 
-	mu_assert_int_eq(0b01000111, compressed[0]);
-	mu_assert_int_eq(0b11110000, compressed[1]);
-	mu_assert_int_eq(0b00111111, compressed[2]);
+	mu_assert_int_eq(0b01000101, compressed[0]);
+	mu_assert_int_eq(0b11111110, compressed[1]);
+	mu_assert_int_eq(0b00001111, compressed[2]);
 }
 
 MU_TEST(test_compress4)
@@ -74,38 +74,38 @@ MU_TEST(test_decompress4)
 
 MU_TEST(test_decompress2)
 {
-    compressed[0] = 0b01000111;    
-    compressed[1] = 0b11110000;
-    compressed[2] = 0b00111101;     
+    compressed[0] = 0b01000101;    
+    compressed[1] = 0b11111110;
+    compressed[2] = 0b00001111;     
     
     decode2(compressed, uncompressed);
 
 	mu_assert_int_eq(0b01000100, uncompressed[0]);
 	mu_assert_int_eq(0b11111100, uncompressed[1]);
-	mu_assert_int_eq(0b00000000, uncompressed[2]);
-	mu_assert_int_eq(0b11110100, uncompressed[3]);
+	mu_assert_int_eq(0b00001100, uncompressed[2]);
+	mu_assert_int_eq(0b11100100, uncompressed[3]);
 }
 
 MU_TEST(test_decompress1)
 {
-    compressed[0] = 0b01000011;    
-    compressed[1] = 0b11111101;
-    compressed[2] = 0b10000101;  
-    compressed[3] = 0b11110000;
-    compressed[4] = 0b00011111;
-    compressed[5] = 0b11000000;
-    compressed[6] = 0b01110111;   
+    compressed[0] = 0b01000010;    
+    compressed[1] = 0b11111111;
+    compressed[2] = 0b01110001;  
+    compressed[3] = 0b11111110;
+    compressed[4] = 0b00000110;
+    compressed[5] = 0b11111111;
+    compressed[6] = 0b00011001;
 
     decode1(compressed, uncompressed);
 
 	mu_assert_int_eq(0b01000010, uncompressed[0]);
 	mu_assert_int_eq(0b11111110, uncompressed[1]);
-	mu_assert_int_eq(0b01100000, uncompressed[2]);
-	mu_assert_int_eq(0b10111110, uncompressed[3]);
-	mu_assert_int_eq(0b00000000, uncompressed[4]);
+	mu_assert_int_eq(0b01110000, uncompressed[2]);
+	mu_assert_int_eq(0b11111110, uncompressed[3]);
+	mu_assert_int_eq(0b00000110, uncompressed[4]);
 	mu_assert_int_eq(0b11111110, uncompressed[5]);
-	mu_assert_int_eq(0b00000000, uncompressed[6]);
-	mu_assert_int_eq(0b11101110, uncompressed[7]);
+	mu_assert_int_eq(0b00011000, uncompressed[6]);
+	mu_assert_int_eq(0b11001100, uncompressed[7]);
 }
 
 MU_TEST_SUITE(test_suite)
