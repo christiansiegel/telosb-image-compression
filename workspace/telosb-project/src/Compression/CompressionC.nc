@@ -81,12 +81,12 @@ implementation {
   /**
    * Buffer for single encoded bits until byte is full.
    */
-  uint8_t _encodedBitBuf;
+  uint8_t _bitBuf;
 
   /**
    * Current bit position in single bit buffer.
    */
-  uint8_t _encodedBitBufPos;
+  uint8_t _bitBufPos;
 
   /**
    * Write byte to output.
@@ -115,14 +115,14 @@ implementation {
    * @param bit   The bit to write to the output.
    */
   inline void writeBit(uint8_t bit) {
-    --_encodedBitBufPos;
+    --_bitBufPos;
 
-    if (bit) _encodedBitBuf |= (1 << _encodedBitBufPos);
+    if (bit) _bitBuf |= (1 << _bitBufPos);
 
-    if (_encodedBitBufPos == 0) {
-      writeByte(_encodedBitBuf);
-      _encodedBitBuf = 0;
-      _encodedBitBufPos = 8;
+    if (_bitBufPos == 0) {
+      writeByte(_bitBuf);
+      _bitBuf = 0;
+      _bitBufPos = 8;
     }
   }
 
@@ -131,10 +131,10 @@ implementation {
    * to the output even if the byte is not full yet.
    */
   inline void writeBitFlush() {
-    if (_encodedBitBufPos != 8) {
-      writeByte(_encodedBitBuf);
-      _encodedBitBuf = 0;
-      _encodedBitBufPos = 8;
+    if (_bitBufPos != 8) {
+      writeByte(_bitBuf);
+      _bitBuf = 0;
+      _bitBufPos = 8;
     }
   }
 
@@ -251,7 +251,7 @@ implementation {
     // pixel value if the the current pixel lies outside the range between lower
     // and higher neighbor pixel values
     uint8_t diff;
-    // row iterator
+    // pixel iterator for this block
     uint16_t i = 0;
 
     // Check if there is enough free space in the output buffer to compress a
@@ -333,16 +333,13 @@ implementation {
     uint8_t tmp[COMPRESS_BLOCK_SIZE / 8 * 7], j, sliced = 0;
     uint16_t i;
     if (call OutBuffer.free() >= sizeof(tmp)) {
-      for (i = 0, j = 0; i < sizeof(tmp); i++) {
-        if (j++ == 0) {
-          sliced = _inBuf[_inBufPos + 7];
+      for (i = 0; i < sizeof(tmp);) {
+        sliced = _inBuf[_inBufPos + 7];
+        for (j = 0; j < 7; j++, i++) {
+          tmp[i] = _inBuf[_inBufPos++] & 0xFE;
+          tmp[i] |= (sliced >>= 1) & 0x01;
         }
-        tmp[i] = _inBuf[_inBufPos++] & 0xFE;
-        tmp[i] |= (sliced >>= 1) & 0x01;
-        if (j == 7) {
-          j = 0;
-          _inBufPos++;
-        }
+        _inBufPos++;
       }
       call OutBuffer.writeBlock(tmp, sizeof(tmp));
       _bytesProcessed += COMPRESS_BLOCK_SIZE;
@@ -359,16 +356,13 @@ implementation {
     uint8_t tmp[COMPRESS_BLOCK_SIZE / 4 * 3], j, sliced = 0;
     uint16_t i;
     if (call OutBuffer.free() >= sizeof(tmp)) {
-      for (i = 0, j = 0; i < sizeof(tmp); i++) {
-        if (j++ == 0) {
-          sliced = _inBuf[_inBufPos + 3];
+      for (i = 0; i < sizeof(tmp);) {
+        sliced = _inBuf[_inBufPos + 3];
+        for (j = 0; j < 3; j++, i++) {
+          tmp[i] = _inBuf[_inBufPos++] & 0xFC;
+          tmp[i] |= (sliced >>= 2) & 0x03;
         }
-        tmp[i] = _inBuf[_inBufPos++] & 0xFC;
-        tmp[i] |= (sliced >>= 2) & 0x03;
-        if (j == 3) {
-          j = 0;
-          _inBufPos++;
-        }
+        _inBufPos++;
       }
       call OutBuffer.writeBlock(tmp, sizeof(tmp));
       _bytesProcessed += COMPRESS_BLOCK_SIZE;
@@ -434,8 +428,8 @@ implementation {
       call OutBuffer.clear();
 #ifdef FELICS
       x = y = 0;
-      _encodedBitBuf = 0;
-      _encodedBitBufPos = 8;
+      _bitBuf = 0;
+      _bitBufPos = 8;
 #endif
       // start compression task
       post compress();
