@@ -1,41 +1,42 @@
 /**
  * Generic implementation of the CircularBuffer interface with
  * variable buffer size.
- * @param SIZE  buffer size
+ * 
+ * @param SIZE  The buffer size.
  */
-generic module CircularBufferC(uint16_t SIZE) @safe() {
+generic module CircularBufferC(uint16_t SIZE) {
 	provides interface CircularBuffer;
 }
 implementation {
 	/**
 	 * Internal byte array.
 	 */
-	uint8_t buf[SIZE];
+	uint8_t _buf[SIZE];
 
 	/**
 	 * Pointer to first available byte
-	 * (unless equal to @see end).
+	 * (unless equal to <code>end</code>).
 	 */
-	uint16_t start = 0;
+	uint16_t _start = 0;
 
 	/**
 	 * Pointer to first invalid byte.
 	 */
-	uint16_t end = 0;
+	uint16_t _end = 0;
 
 	command void CircularBuffer.clear() {
-		start = 0;
-		end = 0;
+		_start = 0;
+		_end = 0;
 	}
 
 	command error_t CircularBuffer.read(uint8_t * byte) {
-		if(start == end) {
+		if(_start == _end) {
 			return FAIL;
 		}
 		else {
-			*byte = buf[start++];
-			if(start == SIZE) 
-				start = 0;
+			*byte = _buf[_start++];
+			if(_start == SIZE) 
+				_start = 0;
 			return SUCCESS;
 		}
 	}
@@ -48,9 +49,9 @@ implementation {
 		else {
 			i = 0;
 			do {
-				block[i++] = buf[start++];
-				if(start == SIZE) 
-					start = 0;
+				block[i++] = _buf[_start++];
+				if(_start == SIZE) 
+					_start = 0;
 			}
 			while(--len > 0);
 			return SUCCESS;
@@ -58,13 +59,13 @@ implementation {
 	}
 
 	command error_t CircularBuffer.write(uint8_t byte) {
-		if(end + 1 == start || (end + 1 == SIZE && start == 0)) {
+		if(_end + 1 == _start || (_end + 1 == SIZE && _start == 0)) {
 			return FAIL;
 		}
 		else {
-			buf[end++] = byte;
-			if(end == SIZE) 
-				end = 0;
+			_buf[_end++] = byte;
+			if(_end == SIZE) 
+				_end = 0;
 			return SUCCESS;
 		}
 	}
@@ -77,9 +78,9 @@ implementation {
 		else {
 			i = 0;
 			do {
-				buf[end++] = block[i++];
-				if(end == SIZE) 
-					end = 0;
+				_buf[_end++] = block[i++];
+				if(_end == SIZE) 
+					_end = 0;
 			}
 			while(--len > 0);
 			return SUCCESS;
@@ -87,16 +88,16 @@ implementation {
 	}
 
 	command uint16_t CircularBuffer.available() {
-		if(start <= end) 
-			return end - start;
+		if(_start <= _end) 
+			return _end - _start;
 		else 
-			return SIZE - start + end;
+			return SIZE - _start + _end;
 	}
 
 	command uint16_t CircularBuffer.free() {
-		if(start <= end) 
-			return SIZE - end + start;
+		if(_start <= _end) 
+			return SIZE - _end + _start;
 		else 
-			return start + end;
+			return _start + _end;
 	}
 }
