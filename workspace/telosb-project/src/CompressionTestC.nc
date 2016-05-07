@@ -2,7 +2,7 @@
 
 #define WRITE_FLASH
 #define READ_FLASH
-//#define CHECK_FIRST_BLOCK
+#define CHECK_FIRST_BLOCK
 
 #if (256 * 256) % COMPRESS_IN_BUF_SIZE != 0
 #error "COMPRESS_IN_BUF_SIZE has to be a divider of 256*256!"
@@ -20,13 +20,13 @@ module CompressionTestC {
   }
 }
 implementation {
-  uint16_t flash_pos;
+  uint16_t flashPos;
   uint8_t raw[COMPRESS_IN_BUF_SIZE];
 
 #ifdef FELICS
 #include "felics_test_data.h"
 #else
-  uint8_t test_data[256] = {
+  uint8_t testData[256] = {
       0xAA,  // 10101010
       0xFF,  // 1111111
       0xFF,  // 11111111
@@ -39,7 +39,7 @@ implementation {
 #endif
 
   event void Flash.eraseDone(error_t result) {
-    call Flash.writeBlock(test_data, 0);
+    call Flash.writeBlock(testData, 0);
   }
 
   event void Flash.writeDone(uint8_t * block, error_t result) {
@@ -47,24 +47,24 @@ implementation {
   }
 
   event void Flash.syncDone(error_t error) {
-    flash_pos = 0;
+    flashPos = 0;
     call Compression.start();
-    call Flash.readBlock(raw, flash_pos);
+    call Flash.readBlock(raw, flashPos);
   }
 
   event void Flash.readDone(uint8_t * block, error_t result) {
     call Leds.led0Off();
-    call Compression.new_input(raw);
+    call Compression.newInput(raw);
   }
 
-  event void Compression.consumed_input(uint8_t * buf) {
+  event void Compression.consumedInput(uint8_t * buf) {
     call Leds.led0On();
-    flash_pos += 1;
+    flashPos += 1;
 
 #ifdef READ_FLASH
-    call Flash.readBlock(raw, flash_pos);  // real flash data
+    call Flash.readBlock(raw, flashPos);  // real flash data
 #else
-    call Compression.new_input(raw);  // random buffer data
+    call Compression.newInput(raw);  // random buffer data
     call Leds.led0Off();
 #endif
   }
@@ -74,18 +74,18 @@ implementation {
     call GIO3.clr();
   }
 
-  task void read_compressed() {
+  task void readCompressed() {
     static uint8_t enc[512];
     static uint16_t pos = 0;
     bool t = TRUE;
 
-    if (call SendBuffer.read_block(enc, sizeof(enc)) == FAIL) {
-      post read_compressed();
+    if (call SendBuffer.readBlock(enc, sizeof(enc)) == FAIL) {
+      post readCompressed();
       return;
     }
 
 #ifdef FELICS
-    t = (bool)(memcmp(&test_enc_expected[pos], enc, 512) == 0);
+    t = (bool)(memcmp(&testEncExpected[pos], enc, 512) == 0);
     pos += 512;
 
 #elif defined(TRUNCATE_1)
@@ -120,7 +120,7 @@ implementation {
     }
 #endif
 
-    post read_compressed();
+    post readCompressed();
   }
 
   event void Boot.booted() {
@@ -131,7 +131,7 @@ implementation {
 
     // start compression
     call GIO3.set();
-    post read_compressed();
+    post readCompressed();
 
 #ifdef WRITE_FLASH
     // test with prior writing of test data to flash

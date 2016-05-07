@@ -5,7 +5,7 @@ interface ProcessInput {
   /**
    * Starts input process.
    *
-   * You have to provide an initial input via <code>new_input(uint8_t)</code>
+   * You have to provide an initial input via <code>newInput(uint8_t)</code>
    * after calling this command.
    *
    * @return 
@@ -29,15 +29,15 @@ interface ProcessInput {
    *    <li>EFAIL if currently no new input is required
    *    <li>SUCCESS if the input has been provided successfully
    */
-  command error_t new_input(uint8_t * buf);
+  command error_t newInput(uint8_t * buf);
 
   /**
    * Signals that the data provided previously with
-   * <code>new_input(uint8_t)</code> has been consumed by the process. New data
-   * has to be provided via <code>new_input(uint8_t)</code> in  order to
+   * <code>newInput(uint8_t)</code> has been consumed by the process. New data
+   * has to be provided via <code>newInput(uint8_t)</code> in  order to
    * continue the process.
    *
    * @param buf  The consumed input buffer.
    */
-  event void consumed_input(uint8_t * buf);
+  event void consumedInput(uint8_t * buf);
 }

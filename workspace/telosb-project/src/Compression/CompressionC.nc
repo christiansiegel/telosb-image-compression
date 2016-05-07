@@ -29,17 +29,17 @@ implementation {
   /**
    * Number of processed bytes.
    */
-  uint32_t _bytes_processed;
+  uint32_t _bytesProcessed;
 
   /**
    * Current input buffer.
    */
-  uint8_t* _in_buf;
+  uint8_t* _inBuf;
 
   /**
    * Current read position in input buffer.
    */
-  uint16_t _in_buf_pos;
+  uint16_t _inBufPos;
 
 #ifdef FELICS
   enum {
@@ -81,23 +81,23 @@ implementation {
   /**
    * Buffer for single encoded bits until byte is full.
    */
-  uint8_t _encoded_bit_buf;
+  uint8_t _encodedBitBuf;
 
   /**
    * Current bit position in single bit buffer.
    */
-  uint8_t _encoded_bit_buf_pos;
+  uint8_t _encodedBitBufPos;
 
   /**
    * Write byte to output.
    *
-   * Be aware that single bits written with <code>write_bit(uint8_t)</code> are
+   * Be aware that single bits written with <code>writeBit(uint8_t)</code> are
    * written to an intermediate buffer until a full byte can be flushed to the
    * output.
    *
    * @param byte  The byte to write to the output.
    */
-  inline void write_byte(uint8_t byte) {
+  inline void writeByte(uint8_t byte) {
     call OutBuffer.write(byte);
     // TODO: Error if byte can't be written. This only happens on worst case
     // images though
@@ -109,32 +109,32 @@ implementation {
    * Write single bit to the output.
    *
    * Bits are written to an intermediate buffer until a full byte can be flushed
-   * to the output. Call <code>write_bit_flush()</code> to flush the buffer to
+   * to the output. Call <code>writeBitFlush()</code> to flush the buffer to
    * the output.
    *
    * @param bit   The bit to write to the output.
    */
-  inline void write_bit(uint8_t bit) {
-    --_encoded_bit_buf_pos;
+  inline void writeBit(uint8_t bit) {
+    --_encodedBitBufPos;
 
-    if (bit) _encoded_bit_buf |= (1 << _encoded_bit_buf_pos);
+    if (bit) _encodedBitBuf |= (1 << _encodedBitBufPos);
 
-    if (_encoded_bit_buf_pos == 0) {
-      write_byte(_encoded_bit_buf);
-      _encoded_bit_buf = 0;
-      _encoded_bit_buf_pos = 8;
+    if (_encodedBitBufPos == 0) {
+      writeByte(_encodedBitBuf);
+      _encodedBitBuf = 0;
+      _encodedBitBufPos = 8;
     }
   }
 
   /**
-   * Flushes the single bit buffer written with <code>write_bit(uint8_t)</code>
+   * Flushes the single bit buffer written with <code>writeBit(uint8_t)</code>
    * to the output even if the byte is not full yet.
    */
-  inline void write_bit_flush() {
-    if (_encoded_bit_buf_pos != 8) {
-      write_byte(_encoded_bit_buf);
-      _encoded_bit_buf = 0;
-      _encoded_bit_buf_pos = 8;
+  inline void writeBitFlush() {
+    if (_encodedBitBufPos != 8) {
+      writeByte(_encodedBitBuf);
+      _encodedBitBuf = 0;
+      _encodedBitBufPos = 8;
     }
   }
 
@@ -163,7 +163,7 @@ implementation {
    * @param range The range of input parameters (possible length of the binary
    * code increases with range).
    */
-  inline void binary_encode(uint16_t a, uint16_t range) {
+  inline void binaryEncode(uint16_t a, uint16_t range) {
     int8_t bits = ceillog2(range);
     uint8_t thresh = (uint8_t)((1 << bits) - range);
 
@@ -172,7 +172,7 @@ implementation {
     else
       a += thresh;
 
-    while ((--bits) >= 0) write_bit((uint8_t)(a >> bits) & 0x1);
+    while ((--bits) >= 0) writeBit((uint8_t)(a >> bits) & 0x1);
   }
 
   /**
@@ -184,7 +184,7 @@ implementation {
    * @param range The range of input parameters (possible length of the binary
    * code increases with range).
    */
-  inline void adjusted_binary_encode(uint16_t a, uint16_t range) {
+  inline void adjustedBinaryEncode(uint16_t a, uint16_t range) {
     int8_t bits = ceillog2(range);
     uint8_t thresh = (uint8_t)((1 << bits) - range);
 
@@ -200,7 +200,7 @@ implementation {
     else
       a += thresh;
 
-    while ((--bits) >= 0) write_bit((uint8_t)(a >> bits) & 0x1);
+    while ((--bits) >= 0) writeBit((uint8_t)(a >> bits) & 0x1);
   }
 
   /**
@@ -209,9 +209,9 @@ implementation {
    *
    * @param a     The input parameter.
    */
-  inline void unary_encode(uint16_t a) {
-    while (a--) write_bit(1);
-    write_bit(0);
+  inline void unaryEncode(uint16_t a) {
+    while (a--) writeBit(1);
+    writeBit(0);
   }
 
   /**
@@ -221,15 +221,15 @@ implementation {
    * @param a     The input parameter.
    * @param k     The parameter K of the golomb-rice code.
    */
-  inline void golomb_rice_encode(uint8_t a, uint8_t k) {
-    unary_encode(a >> k);
-    if (k > 0) binary_encode(a & ((1 << k) - 1), 1 << k);
+  inline void golombRiceEncode(uint8_t a, uint8_t k) {
+    unaryEncode(a >> k);
+    if (k > 0) binaryEncode(a & ((1 << k) - 1), 1 << k);
   }
 
   /**
    * Compress the next block of pixels and write them to the output.
    */
-  inline void compress_block() {
+  inline void compressBlock() {
     // current pixel value
     uint8_t P;
     // pixel value memory to pick the neighbors from
@@ -264,7 +264,7 @@ implementation {
     do {
       do {
         // Felics Step 1:
-        P = _in_buf[_in_buf_pos + i++];
+        P = _inBuf[_inBufPos + i++];
         if (y > 0) {
           if (x > 0) {
             N1 = line[x - 1];
@@ -282,7 +282,7 @@ implementation {
             N2 = N1;
           } else {
             line[x] = P;
-            write_byte(P);
+            writeByte(P);
             continue;
           }
         }
@@ -301,26 +301,26 @@ implementation {
         // Felics Step 3:
         if ((L <= P) && (P <= H)) {
           // Felics Step 3 (a):
-          write_bit(IN_RANGE);
-          if (delta > 0) adjusted_binary_encode(P - L, delta + 1);
+          writeBit(IN_RANGE);
+          if (delta > 0) adjustedBinaryEncode(P - L, delta + 1);
         } else {
           // Felics Step 3 (b) or (c):
-          write_bit(OUT_OF_RANGE);
+          writeBit(OUT_OF_RANGE);
           if (P < L) {
-            write_bit(BELOW_RANGE);
+            writeBit(BELOW_RANGE);
             diff = L - P - 1;
           } else {
-            write_bit(ABOVE_RANGE);
+            writeBit(ABOVE_RANGE);
             diff = P - H - 1;
           }
-          golomb_rice_encode(diff, K);
+          golombRiceEncode(diff, K);
         }
       } while (x++ != 255 && i < COMPRESS_BLOCK_SIZE);
     } while (x == 0 && y++ != 255 && i < COMPRESS_BLOCK_SIZE);
 
-    _in_buf_pos += COMPRESS_BLOCK_SIZE;
-    _bytes_processed += COMPRESS_BLOCK_SIZE;
-    if (_bytes_processed == 65536) write_bit_flush();
+    _inBufPos += COMPRESS_BLOCK_SIZE;
+    _bytesProcessed += COMPRESS_BLOCK_SIZE;
+    if (_bytesProcessed == 65536) writeBitFlush();
   }
 #elif defined(TRUNCATE_1)
 #if COMPRESS_BLOCK_SIZE % 8 != 0
@@ -329,23 +329,23 @@ implementation {
   /**
    * Compress the next block of pixels and write them to the output.
    */
-  inline void compress_block() {
+  inline void compressBlock() {
     uint8_t tmp[COMPRESS_BLOCK_SIZE / 8 * 7], j, sliced = 0;
     uint16_t i;
     if (call OutBuffer.free() >= sizeof(tmp)) {
       for (i = 0, j = 0; i < sizeof(tmp); i++) {
         if (j++ == 0) {
-          sliced = _in_buf[_in_buf_pos + 7];
+          sliced = _inBuf[_inBufPos + 7];
         }
-        tmp[i] = _in_buf[_in_buf_pos++] & 0xFE;
+        tmp[i] = _inBuf[_inBufPos++] & 0xFE;
         tmp[i] |= (sliced >>= 1) & 0x01;
         if (j == 7) {
           j = 0;
-          _in_buf_pos++;
+          _inBufPos++;
         }
       }
-      call OutBuffer.write_block(tmp, sizeof(tmp));
-      _bytes_processed += COMPRESS_BLOCK_SIZE;
+      call OutBuffer.writeBlock(tmp, sizeof(tmp));
+      _bytesProcessed += COMPRESS_BLOCK_SIZE;
     }
   }
 #elif defined(TRUNCATE_2)
@@ -355,23 +355,23 @@ implementation {
   /**
    * Compress the next block of pixels and write them to the output.
    */
-  inline void compress_block() {
+  inline void compressBlock() {
     uint8_t tmp[COMPRESS_BLOCK_SIZE / 4 * 3], j, sliced = 0;
     uint16_t i;
     if (call OutBuffer.free() >= sizeof(tmp)) {
       for (i = 0, j = 0; i < sizeof(tmp); i++) {
         if (j++ == 0) {
-          sliced = _in_buf[_in_buf_pos + 3];
+          sliced = _inBuf[_inBufPos + 3];
         }
-        tmp[i] = _in_buf[_in_buf_pos++] & 0xFC;
+        tmp[i] = _inBuf[_inBufPos++] & 0xFC;
         tmp[i] |= (sliced >>= 2) & 0x03;
         if (j == 3) {
           j = 0;
-          _in_buf_pos++;
+          _inBufPos++;
         }
       }
-      call OutBuffer.write_block(tmp, sizeof(tmp));
-      _bytes_processed += COMPRESS_BLOCK_SIZE;
+      call OutBuffer.writeBlock(tmp, sizeof(tmp));
+      _bytesProcessed += COMPRESS_BLOCK_SIZE;
     }
   }
 #elif defined(TRUNCATE_4)
@@ -381,16 +381,16 @@ implementation {
   /**
    * Compress the next block of pixels and write them to the output.
    */
-  inline void compress_block() {
+  inline void compressBlock() {
     uint8_t tmp[COMPRESS_BLOCK_SIZE / 2];
     uint16_t i;
     if (call OutBuffer.free() >= sizeof(tmp)) {
       for (i = 0; i < sizeof(tmp); i++) {
-        tmp[i] = _in_buf[_in_buf_pos++] & 0xF0;
-        tmp[i] |= _in_buf[_in_buf_pos++] >> 4;
+        tmp[i] = _inBuf[_inBufPos++] & 0xF0;
+        tmp[i] |= _inBuf[_inBufPos++] >> 4;
       }
-      call OutBuffer.write_block(tmp, sizeof(tmp));
-      _bytes_processed += COMPRESS_BLOCK_SIZE;
+      call OutBuffer.writeBlock(tmp, sizeof(tmp));
+      _bytesProcessed += COMPRESS_BLOCK_SIZE;
     }
   }
 #endif
@@ -399,22 +399,22 @@ implementation {
    * Compression task.
    */
   task void compress() {
-    if (_bytes_processed == 65536) {
+    if (_bytesProcessed == 65536) {
       // Whole image compressed -> signal done
       _running = FALSE;
       signal Compression.done();
       return;
-    } else if (_in_buf == NULL) {
+    } else if (_inBuf == NULL) {
       // No new input available. Do nothing.
-    } else if (_in_buf_pos == COMPRESS_IN_BUF_SIZE) {
+    } else if (_inBufPos == COMPRESS_IN_BUF_SIZE) {
       // Input buffer consumed -> request a new one
-      uint8_t* tmp = _in_buf;
-      _in_buf_pos = 0;
-      _in_buf = NULL;
-      signal Compression.consumed_input(tmp);
+      uint8_t* tmp = _inBuf;
+      _inBufPos = 0;
+      _inBuf = NULL;
+      signal Compression.consumedInput(tmp);
     } else {
       // Try to compress next block
-      compress_block();
+      compressBlock();
     }
     // Re-post task until compression is done
     post compress();
@@ -428,14 +428,14 @@ implementation {
       // start compression
       // reset state variables and buffers
       _running = TRUE;
-      _bytes_processed = 0;
-      _in_buf = NULL;
-      _in_buf_pos = 0;
+      _bytesProcessed = 0;
+      _inBuf = NULL;
+      _inBufPos = 0;
       call OutBuffer.clear();
 #ifdef FELICS
       x = y = 0;
-      _encoded_bit_buf = 0;
-      _encoded_bit_buf_pos = 8;
+      _encodedBitBuf = 0;
+      _encodedBitBufPos = 8;
 #endif
       // start compression task
       post compress();
@@ -443,17 +443,17 @@ implementation {
     }
   }
 
-  command error_t Compression.new_input(uint8_t * buf) {
+  command error_t Compression.newInput(uint8_t * buf) {
     if (_running == FALSE) {
       // no running compression process to provide new data for
       return ECANCEL;
-    } else if (_in_buf != NULL) {
+    } else if (_inBuf != NULL) {
       // the current input is not consumed yet
       return EBUSY;
     } else {
       // set new input
-      _in_buf = buf;
-      _in_buf_pos = 0;
+      _inBuf = buf;
+      _inBufPos = 0;
       return SUCCESS;
     }
   }

@@ -28,7 +28,7 @@ interface CircularBuffer {
    *    <li>FAIL if not enough bytes available
    *    <li>SUCCESS if block was read
    */
-  command error_t read_block(uint8_t * block, uint16_t len);
+  command error_t readBlock(uint8_t * block, uint16_t len);
 
   /**
    * Write single byte to buffer.
@@ -51,7 +51,7 @@ interface CircularBuffer {
    *    <li>FAIL if not enough free space
    *    <li>SUCCESS if block was written
    */
-  command error_t write_block(uint8_t * block, uint16_t len);
+  command error_t writeBlock(uint8_t * block, uint16_t len);
 
   /**
    * Returns free space in number of bytes.

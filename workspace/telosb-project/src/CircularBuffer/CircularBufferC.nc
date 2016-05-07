@@ -41,7 +41,7 @@ implementation {
 		}
 	}
 
-	command error_t CircularBuffer.read_block(uint8_t * block, uint16_t len) {
+	command error_t CircularBuffer.readBlock(uint8_t * block, uint16_t len) {
 		uint16_t i;
 		if(call CircularBuffer.available() < len) {
 			return FAIL;
@@ -70,7 +70,7 @@ implementation {
 		}
 	}
 
-	command error_t CircularBuffer.write_block(uint8_t * block, uint16_t len) {
+	command error_t CircularBuffer.writeBlock(uint8_t * block, uint16_t len) {
 		uint16_t i;
 		if(call CircularBuffer.free() < len) {
 			return FAIL;
