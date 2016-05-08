@@ -1,0 +1,3 @@
+COMPONENT=MainAppC
+include $(MAKERULES)
+

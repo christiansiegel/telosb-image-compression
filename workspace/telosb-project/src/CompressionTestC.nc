@@ -1,34 +1,26 @@
 #include "Config.h"
 
 #define WRITE_FLASH
-#define READ_FLASH
-#define CHECK_FIRST_BLOCK
-
-#if (256 * 256) % COMPRESS_IN_BUF_SIZE != 0
-#error "COMPRESS_IN_BUF_SIZE has to be a divider of 256*256!"
-#endif
 
 module CompressionTestC {
   uses {
-    interface Leds;
     interface Boot;
-    interface Flash;
-    interface ProcessInput as Compression;
-    interface CircularBuffer as SendBuffer;
-    // 6-pin connector outer middle pin:
+    interface Leds;
     interface HplMsp430GeneralIO as GIO3;
+    interface FlashWriter;
+    interface FlashReader;
+    interface Compression;
+    interface CircularBufferWrite as FlashBuffer;
+    interface CircularBufferRead as SendBuffer;
   }
 }
 implementation {
-  uint16_t flashPos;
-  uint8_t raw[COMPRESS_IN_BUF_SIZE];
-
 #ifdef FELICS
 #include "felics_test_data.h"
 #else
   uint8_t testData[256] = {
       0xAA,  // 10101010
-      0xFF,  // 1111111
+      0xFF,  // 11111111
       0xFF,  // 11111111
       0xFF,  // 11111111
       0xFF,  // 11111111
@@ -38,56 +30,20 @@ implementation {
   };
 #endif
 
-  event void Flash.eraseDone(error_t result) {
-    call Flash.writeBlock(testData, 0);
-  }
-
-  event void Flash.writeDone(uint8_t * block, error_t result) {
-    call Flash.sync();
-  }
-
-  event void Flash.syncDone(error_t error) {
-    flashPos = 0;
-    call Compression.start();
-    call Flash.readBlock(raw, flashPos);
-  }
-
-  event void Flash.readDone(uint8_t * block, error_t result) {
-    call Leds.led0Off();
-    call Compression.newInput(raw);
-  }
-
-  event void Compression.consumedInput(uint8_t * buf) {
-    call Leds.led0On();
-    flashPos += 1;
-
-#ifdef READ_FLASH
-    call Flash.readBlock(raw, flashPos);  // real flash data
-#else
-    call Compression.newInput(raw);  // random buffer data
-    call Leds.led0Off();
-#endif
-  }
-
-  event void Compression.done() {
-    call Leds.set(7);
-    call GIO3.clr();
-  }
-
-  task void readCompressed() {
+  task void senderTask() {
     static uint8_t enc[512];
-    static uint16_t pos = 0;
     bool t = TRUE;
+    static uint16_t blockNr = 0;
 
-    if (call SendBuffer.readBlock(enc, sizeof(enc)) == FAIL) {
-      post readCompressed();
+    if (call SendBuffer.available() < sizeof(enc)) {
+      post senderTask();
       return;
     }
 
-#ifdef FELICS
-    t = (bool)(memcmp(&testEncExpected[pos], enc, 512) == 0);
-    pos += 512;
+    call SendBuffer.readBlock(enc, sizeof(enc));
 
+#ifdef FELICS
+    t = (bool)(memcmp(&testEncExpected[sizeof(enc) * blockNr], enc, sizeof(enc)) == 0);
 #elif defined(TRUNCATE_1)
     t &= enc[0] == 0xAA;  // 10101010
     t &= enc[1] == 0xFF;  // 11111111
@@ -111,34 +67,70 @@ implementation {
     t &= enc[3] == 0xFE;  // 11111110
 #endif
 
-#ifdef CHECK_FIRST_BLOCK
-    while (1) {
-      if (t)
-        call Leds.set(5);  // tests passed
-      else
-        call Leds.set(2);  // tests failed
-    }
+#ifdef FELICS
+    if (blockNr < 3) {
+#elif
+    if (blockNr == 0) {
 #endif
+      PRINTLN("check of %d byte block #%d: %s", sizeof(enc), blockNr,
+              t ? "PASSED" : "FAILED");
+    }
+    blockNr++;
+    
+    post senderTask();
+  }
 
-    post readCompressed();
+  /**
+   * Temporary replacement for the serial receiver.
+   */
+  task void serialReceiverTask() {
+    static uint32_t byteCount = 0;
+    uint32_t pos;
+    error_t result;
+
+    if (byteCount >= 65536) {
+      // all bytes received
+      PRINTLN("simulated serial receiver done");
+      return;
+    } else {
+      // write test data to flash buffer is enough space is available
+      pos = byteCount <= sizeof(testData) ? byteCount : 0;
+      result = call FlashBuffer.writeBlock(&testData[pos], SERIAL_PAYLOAD_SIZE);
+      if (result == SUCCESS) byteCount += SERIAL_PAYLOAD_SIZE;
+    }
+
+    post serialReceiverTask();
+  }
+
+  event void FlashWriter.writeDone(error_t error) {
+    PRINTLN("flash write done => result: %d", error);
+    if (error == SUCCESS) {
+      call FlashReader.read();
+      call Compression.compress();
+      post senderTask();
+    }
+  }
+
+  event void FlashReader.readDone(error_t error) {
+    PRINTLN("flash read done => result: %d", error);
+  }
+
+  event void Compression.compressDone(error_t error) {
+    PRINTLN("compression done => result: %d", error);
   }
 
   event void Boot.booted() {
-    // init
     call Leds.set(0);
     call GIO3.makeOutput();
     call GIO3.clr();
 
-    // start compression
-    call GIO3.set();
-    post readCompressed();
-
 #ifdef WRITE_FLASH
-    // test with prior writing of test data to flash
-    call Flash.erase();
+    PRINTLN("test with prior writing of test data to flash...");
+    post serialReceiverTask();
+    call FlashWriter.write();
 #else
-    // test with existing flash test data
-    signal Flash.syncDone(SUCCESS);
+    PRINTLN("test with existing flash test data...");
+    signal FlashWriter.writeDone(SUCCESS);
 #endif
   }
 }

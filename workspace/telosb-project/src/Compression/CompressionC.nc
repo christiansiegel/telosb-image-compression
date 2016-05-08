@@ -1,9 +1,5 @@
 #include "Config.h"
 
-#if COMPRESS_IN_BUF_SIZE % COMPRESS_BLOCK_SIZE != 0
-#error "COMPRESS_IN_BUF_SIZE has to be a multiple of COMPRESS_BLOCK_SIZE!"
-#endif
-
 #if !(defined(FELICS) ^ defined(TRUNCATE_1) ^ defined(TRUNCATE_2) ^ \
       defined(TRUNCATE_4))
 #error "You have to specify exactly one compression algorithm to use!"
@@ -11,14 +7,13 @@
 
 /**
  * Compression of a 256x256 pixel greyscale image.
- *
- * Gradually takes input from a set of input buffers. Compressed data is output
- * continuously on the output circular buffer. Compression is done block-wise
- * whenever there is enough free space in the output buffer.
  */
 module CompressionC {
-  provides interface ProcessInput as Compression;
-  uses interface CircularBuffer as OutBuffer;
+  provides interface Compression;
+  uses {
+    interface CircularBufferWrite as OutBuffer;
+    interface CircularBufferRead as InBuffer;
+  }
 }
 implementation {
   /**
@@ -30,16 +25,6 @@ implementation {
    * Number of processed bytes.
    */
   uint32_t _bytesProcessed;
-
-  /**
-   * Current input buffer.
-   */
-  uint8_t* _inBuf;
-
-  /**
-   * Current read position in input buffer.
-   */
-  uint16_t _inBufPos;
 
 #ifdef FELICS
   enum {
@@ -189,10 +174,8 @@ implementation {
     uint8_t thresh = (uint8_t)((1 << bits) - range);
 
     // ADJUSTED PART START ------------
-
     a -= ((range - thresh) >> 1);
     if ((int16_t)a < 0) a += range;
-
     // ADJUSTED PART END --------------
 
     if (a < thresh)
@@ -253,18 +236,21 @@ implementation {
     uint8_t diff;
     // pixel iterator for this block
     uint16_t i = 0;
+    // temporary input buffer for this compression block
+    uint8_t tmpIn[COMPRESS_BLOCK_SIZE];
 
     // Check if there is enough free space in the output buffer to compress a
     // new block
     // TODO: Worst case image can produce an output that is larger than the
-    // input. This would cause a buffer overflow.
+    // input. This would cause a loss of bytes..
     if (call OutBuffer.free() < COMPRESS_BLOCK_SIZE) return;
+    if (call InBuffer.readBlock(tmpIn, COMPRESS_BLOCK_SIZE) != SUCCESS) return;
 
     // iterate over all image pixels
     do {
       do {
         // Felics Step 1:
-        P = _inBuf[_inBufPos + i++];
+        P = tmpIn[i++];
         if (y > 0) {
           if (x > 0) {
             N1 = line[x - 1];
@@ -318,7 +304,6 @@ implementation {
       } while (x++ != 255 && i < COMPRESS_BLOCK_SIZE);
     } while (x == 0 && y++ != 255 && i < COMPRESS_BLOCK_SIZE);
 
-    _inBufPos += COMPRESS_BLOCK_SIZE;
     _bytesProcessed += COMPRESS_BLOCK_SIZE;
     if (_bytesProcessed == 65536) writeBitFlush();
   }
@@ -330,20 +315,21 @@ implementation {
    * Compress the next block of pixels and write them to the output.
    */
   inline void compressBlock() {
-    uint8_t tmp[COMPRESS_BLOCK_SIZE / 8 * 7], j, sliced = 0;
-    uint16_t i;
-    if (call OutBuffer.free() >= sizeof(tmp)) {
-      for (i = 0; i < sizeof(tmp);) {
-        sliced = _inBuf[_inBufPos + 7];
-        for (j = 0; j < 7; j++, i++) {
-          tmp[i] = _inBuf[_inBufPos++] & 0xFE;
-          tmp[i] |= (sliced >>= 1) & 0x01;
-        }
-        _inBufPos++;
+    uint8_t j, sliced = 0;
+    uint8_t tmpIn[COMPRESS_BLOCK_SIZE];
+    uint8_t tmpOut[COMPRESS_BLOCK_SIZE / 8 * 7];
+    uint16_t iOut, iIn;
+    if (call OutBuffer.free() < sizeof(tmpOut)) return;
+    if (call InBuffer.readBlock(tmpIn, COMPRESS_BLOCK_SIZE) != SUCCESS) return;
+    for (iIn = 0, iOut = 0; iIn < COMPRESS_BLOCK_SIZE; iIn++) {
+      sliced = tmpIn[iIn + 7];
+      for (j = 0; j < 7; j++, iIn++, iOut++) {
+        tmpOut[iOut] = tmpIn[iIn] & 0xFE;
+        tmpOut[iOut] |= (sliced >>= 1) & 0x01;
       }
-      call OutBuffer.writeBlock(tmp, sizeof(tmp));
-      _bytesProcessed += COMPRESS_BLOCK_SIZE;
     }
+    call OutBuffer.writeBlock(tmpOut, sizeof(tmpOut));
+    _bytesProcessed += COMPRESS_BLOCK_SIZE;
   }
 #elif defined(TRUNCATE_2)
 #if COMPRESS_BLOCK_SIZE % 4 != 0
@@ -353,20 +339,21 @@ implementation {
    * Compress the next block of pixels and write them to the output.
    */
   inline void compressBlock() {
-    uint8_t tmp[COMPRESS_BLOCK_SIZE / 4 * 3], j, sliced = 0;
-    uint16_t i;
-    if (call OutBuffer.free() >= sizeof(tmp)) {
-      for (i = 0; i < sizeof(tmp);) {
-        sliced = _inBuf[_inBufPos + 3];
-        for (j = 0; j < 3; j++, i++) {
-          tmp[i] = _inBuf[_inBufPos++] & 0xFC;
-          tmp[i] |= (sliced >>= 2) & 0x03;
-        }
-        _inBufPos++;
+    uint8_t j, sliced = 0;
+    uint8_t tmpIn[COMPRESS_BLOCK_SIZE];
+    uint8_t tmpOut[COMPRESS_BLOCK_SIZE / 4 * 3];
+    uint16_t iOut, iIn;
+    if (call OutBuffer.free() < sizeof(tmpOut)) return;
+    if (call InBuffer.readBlock(tmpIn, COMPRESS_BLOCK_SIZE) != SUCCESS) return;
+    for (iIn = 0, iOut = 0; iIn < COMPRESS_BLOCK_SIZE; iIn++) {
+      sliced = tmpIn[iIn + 3];
+      for (j = 0; j < 3; j++, iIn++, iOut++) {
+        tmpOut[iOut] = tmpIn[iIn] & 0xFC;
+        tmpOut[iOut] |= (sliced >>= 2) & 0x03;
       }
-      call OutBuffer.writeBlock(tmp, sizeof(tmp));
-      _bytesProcessed += COMPRESS_BLOCK_SIZE;
     }
+    call OutBuffer.writeBlock(tmpOut, sizeof(tmpOut));
+    _bytesProcessed += COMPRESS_BLOCK_SIZE;
   }
 #elif defined(TRUNCATE_4)
 #if COMPRESS_BLOCK_SIZE % 2 != 0
@@ -376,16 +363,17 @@ implementation {
    * Compress the next block of pixels and write them to the output.
    */
   inline void compressBlock() {
-    uint8_t tmp[COMPRESS_BLOCK_SIZE / 2];
-    uint16_t i;
-    if (call OutBuffer.free() >= sizeof(tmp)) {
-      for (i = 0; i < sizeof(tmp); i++) {
-        tmp[i] = _inBuf[_inBufPos++] & 0xF0;
-        tmp[i] |= _inBuf[_inBufPos++] >> 4;
-      }
-      call OutBuffer.writeBlock(tmp, sizeof(tmp));
-      _bytesProcessed += COMPRESS_BLOCK_SIZE;
+    uint8_t tmpIn[COMPRESS_BLOCK_SIZE];
+    uint8_t tmpOut[COMPRESS_BLOCK_SIZE / 2];
+    uint16_t iOut, iIn;
+    if (call OutBuffer.free() < sizeof(tmpOut)) return;
+    call InBuffer.readBlock(tmpIn, COMPRESS_BLOCK_SIZE);
+    for (iIn = 0, iOut = 0; iIn < COMPRESS_BLOCK_SIZE; iOut++) {
+      tmpOut[iOut] = tmpIn[iIn++] & 0xF0;
+      tmpOut[iOut] |= tmpIn[iIn++] >> 4;
     }
+    call OutBuffer.writeBlock(tmpOut, sizeof(tmpOut));
+    _bytesProcessed += COMPRESS_BLOCK_SIZE;
   }
 #endif
 
@@ -396,25 +384,18 @@ implementation {
     if (_bytesProcessed == 65536) {
       // Whole image compressed -> signal done
       _running = FALSE;
-      signal Compression.done();
+      signal Compression.compressDone(SUCCESS);
       return;
-    } else if (_inBuf == NULL) {
-      // No new input available. Do nothing.
-    } else if (_inBufPos == COMPRESS_IN_BUF_SIZE) {
-      // Input buffer consumed -> request a new one
-      uint8_t* tmp = _inBuf;
-      _inBufPos = 0;
-      _inBuf = NULL;
-      signal Compression.consumedInput(tmp);
-    } else {
-      // Try to compress next block
+    } else if (call InBuffer.available() >= COMPRESS_BLOCK_SIZE) {
+      // Compress next block
+      // (Check if enough space in output buffer is done in compressBlock())
       compressBlock();
     }
     // Re-post task until compression is done
     post compress();
   }
 
-  command error_t Compression.start() {
+  command error_t Compression.compress() {
     if (_running) {
       // compression is already running
       return EBUSY;
@@ -423,8 +404,7 @@ implementation {
       // reset state variables and buffers
       _running = TRUE;
       _bytesProcessed = 0;
-      _inBuf = NULL;
-      _inBufPos = 0;
+
       call OutBuffer.clear();
 #ifdef FELICS
       x = y = 0;
@@ -433,21 +413,6 @@ implementation {
 #endif
       // start compression task
       post compress();
-      return SUCCESS;
-    }
-  }
-
-  command error_t Compression.newInput(uint8_t * buf) {
-    if (_running == FALSE) {
-      // no running compression process to provide new data for
-      return ECANCEL;
-    } else if (_inBuf != NULL) {
-      // the current input is not consumed yet
-      return EBUSY;
-    } else {
-      // set new input
-      _inBuf = buf;
-      _inBufPos = 0;
       return SUCCESS;
     }
   }
