@@ -14,8 +14,7 @@ interface Decompression {
   /**
    * Signals the end of the decompression.
    *
-   * @return
-   *    <li>SUCCESS if the decompression was successful.
+   * @param error   SUCCESS if the decompression was successful.
    */
   event void compressDone(error_t error);
 }
