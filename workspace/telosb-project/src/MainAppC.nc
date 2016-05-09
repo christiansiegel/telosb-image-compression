@@ -3,8 +3,6 @@
 
 configuration MainAppC {}
 implementation {
-  components CompressionTestC as TestApp;
-
   // General
   components MainC;
 
@@ -17,6 +15,9 @@ implementation {
   components new FlashC(IMAGE_SIZE) as Flash;
   components new CircularBufferC(FLASH_BUF_SIZE) as FlashBuffer;
 
+#ifdef SENDER
+  components SenderAppC as App;
+
   // Compression
   components CompressionC as Compression;
   components new CircularBufferC(COMPRESSION_BUF_SIZE) as CompressionBuffer;
@@ -24,22 +25,27 @@ implementation {
   // Sending
   components RFSenderC;
 
-  TestApp.Boot->MainC;
-  TestApp.Leds->LedsC;
-  TestApp.GIO3->GIO.Port26; // 6-pin connector -> outer middle pin
-  TestApp.FlashWriter->Flash;
-  TestApp.FlashReader->Flash;
-  TestApp.Compression->Compression;
-  TestApp.RFSender->RFSenderC;
-  TestApp.FlashBuffer->FlashBuffer;  // until we have a serial receiver module
-
-  Flash.BlockRead->ImageStorage;
-  Flash.BlockWrite->ImageStorage;
-  Flash.Buffer->FlashBuffer;
-  Flash.BufferLowLevel->FlashBuffer;
+  App.Compression->Compression;
+  App.RFSender->RFSenderC;
 
   Compression.InBuffer->FlashBuffer;
   Compression.OutBuffer->CompressionBuffer;
   
   RFSenderC.InBuffer->CompressionBuffer;
+#else // RECEIVER
+  // TODO
+#endif
+
+  App.Boot->MainC;
+  App.Leds->LedsC;
+  App.GIO3->GIO.Port26; // 6-pin connector -> outer middle pin
+  
+  App.FlashWriter->Flash;
+  App.FlashReader->Flash;
+  App.FlashBuffer->FlashBuffer;  // until we have a serial receiver module
+
+  Flash.BlockRead->ImageStorage;
+  Flash.BlockWrite->ImageStorage;
+  Flash.Buffer->FlashBuffer;
+  Flash.BufferLowLevel->FlashBuffer;
 }

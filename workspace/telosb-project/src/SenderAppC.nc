@@ -3,7 +3,7 @@
 
 //#define WRITE_FLASH
 
-module CompressionTestC {
+module SenderAppC {
   uses {
     interface Boot;
     interface Leds;
@@ -55,11 +55,11 @@ implementation {
     PRINTLN("compression done => result: %d", error);
     call RFSender.flush();
   }
-  
+
   event void RFSender.sendDone(error_t error) {
     PRINTLN("sending done => result: %d", error);
   }
-  
+
   event void Boot.booted() {
     call Leds.set(7);
     call GIO3.makeOutput();

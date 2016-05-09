@@ -2,6 +2,16 @@
 #define CONFIG_H
 
 /**
+ * Compile for sending node.
+ */
+#define SENDER
+
+/**
+ * Compile for receiving node.
+ */
+#define RECEIVER
+
+/**
  * Use Felics lossless compression.
  */
 //#define FELICS
@@ -37,7 +47,8 @@
 
 /**
  * Size of blocks that are compressed at once.
- * Smaller size means shorter compression task cycles but more calls to the buffer interfaces.
+ * Smaller size means shorter compression task cycles but more calls to the
+ * buffer interfaces.
  */
 #define COMPRESS_BLOCK_SIZE 256
 
