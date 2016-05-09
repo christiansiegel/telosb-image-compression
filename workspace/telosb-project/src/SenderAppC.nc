@@ -36,16 +36,13 @@ implementation {
   /**
    * Current state of the mote.
    */
-  state _state;
+  state _state = IDLE;
 
   event void FlashWriter.writeDone(error_t error) {
     PRINTLN("flash write done => result: %d", error);
     _state = IDLE;
     PRINTLN("entered IDLE");
     call Serial.flashAccessEnd();
-
-    // simulate received commands
-    signal Serial.imageTransmissionOk();
   }
 
   event void FlashReader.readDone(error_t error) {
@@ -88,17 +85,5 @@ implementation {
     call Leds.set(0);
     call GIO3.makeOutput();
     call GIO3.clr();
-
-    _state = IDLE;
-    PRINTLN("entered IDLE");
-
-// simulate received commands
-#ifdef WRITE_FLASH
-    PRINTLN("test with prior writing of test data to flash...");
-    signal Serial.flashAccessOk();
-#else
-    PRINTLN("test with existing flash test data...");
-    signal Serial.imageTransmissionOk();
-#endif
   }
 }

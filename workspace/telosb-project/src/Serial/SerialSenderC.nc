@@ -1,11 +1,16 @@
 #include "CompressionTestData.h"
 #include "Defs.h"
 
+#define SIMULATE_WRITE_FLASH
+
 /**
  * Serial module fore the sending mote.
  */
 module SerialSenderC {
-  uses interface CircularBufferWrite as OutBuffer;
+  uses {
+    interface Boot;
+    interface CircularBufferWrite as OutBuffer;
+  }
   provides interface SerialControl;
 }
 implementation {
@@ -33,7 +38,21 @@ implementation {
     byteCount = 0;
     post serialReceiverTask();
   }
-  command void SerialControl.flashAccessEnd() {}
+
+  command void SerialControl.flashAccessEnd() {
+    // simulate received command:
+    signal SerialControl.imageTransmissionOk();
+  }
+
   command void SerialControl.rfTransmissionStart() {}
   command void SerialControl.rfTransmissionEnd() {}
+
+  event void Boot.booted() {
+// simulate received commands
+#ifdef SIMULATE_WRITE_FLASH
+    signal SerialControl.flashAccessOk();
+#else
+    signal SerialControl.imageTransmissionOk();
+#endif
+  }
 }

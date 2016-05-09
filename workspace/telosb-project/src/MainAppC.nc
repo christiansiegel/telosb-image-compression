@@ -41,6 +41,7 @@ implementation {
 #endif
 
   App.Boot->MainC;
+  Serial.Boot->MainC;
   
   App.Leds->LedsC;
   App.GIO3->GIO.Port26; // 6-pin connector -> outer middle pin
