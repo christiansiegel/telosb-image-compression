@@ -17,8 +17,8 @@ implementation {
   uint32_t byteCount;
 
   task void serialReceiverTask() {
-    uint32_t pos;
-    error_t result;
+    static uint32_t pos;
+    static error_t result;
 
     if (byteCount >= IMAGE_SIZE) {
       // all bytes received

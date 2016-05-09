@@ -11,7 +11,9 @@ module SenderAppC {
     interface FlashWriter;
     interface FlashReader;
     interface SerialControl as Serial;
+ #ifndef NO_COMPRESSION
     interface Compression;
+ #endif
     interface RFSender as Rf;
     interface CircularBufferWrite as FlashBuffer;
   }
@@ -47,12 +49,17 @@ implementation {
 
   event void FlashReader.readDone(error_t error) {
     PRINTLN("flash read done => result: %d", error);
+#ifdef NO_COMPRESSION
+    call Rf.flush();
+#endif
   }
 
+#ifndef NO_COMPRESSION
   event void Compression.compressDone(error_t error) {
     PRINTLN("compression done => result: %d", error);
     call Rf.flush();
   }
+#endif
 
   event void Rf.sendDone(error_t error) {
     PRINTLN("sending done => result: %d", error);
@@ -75,7 +82,9 @@ implementation {
     	PRINTLN("entered RF_TRANSMISSION");
       _state = RF_TRANSMISSION;
       call FlashReader.read();
+#ifndef NO_COMPRESSION
       call Compression.compress();
+#endif
       call Rf.send();
       call Serial.rfTransmissionStart();
     }

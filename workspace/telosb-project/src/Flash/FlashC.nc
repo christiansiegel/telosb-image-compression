@@ -32,7 +32,7 @@ implementation {
   uint32_t _byteCounter;
 
   task void readTask() {
-    int posted = FALSE;
+    static int posted;
 
     if (*_bufferEnd == 0 &&
         (*_bufferStart > _bufferMiddle || *_bufferStart == 0)) {
@@ -49,12 +49,14 @@ implementation {
                                    _buffer + _bufferMiddle,     // buffer pos
                                    _bufferSize - _bufferMiddle  // size
                                    ) == SUCCESS;
+    } else {
+    	posted = FALSE;
     }
     if (!posted) post readTask();
   }
 
   task void writeTask() {
-    int posted = FALSE;
+    static int posted;
 
     if (*_bufferStart == 0 && *_bufferEnd >= _bufferMiddle) {
       // first half of buffer is available -> write data to flash
@@ -68,6 +70,8 @@ implementation {
                                      _buffer + _bufferMiddle,     // buffer pos
                                      _bufferSize - _bufferMiddle  // size
                                      ) == SUCCESS;
+    } else {
+        posted = FALSE;
     }
     if (!posted) post writeTask();
   }

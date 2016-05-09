@@ -4,7 +4,7 @@
 #include "Config.h"
 
 #if !(defined(FELICS) ^ defined(TRUNCATE_1) ^ defined(TRUNCATE_2) ^ \
-      defined(TRUNCATE_4))
+      defined(TRUNCATE_4) ^ defined(NO_COMPRESSION))
 #error "You have to specify exactly one compression algorithm to use!"
 #endif
 

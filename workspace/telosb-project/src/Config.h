@@ -12,6 +12,11 @@
 //#define RECEIVER
 
 /**
+ * Use no compression.
+ */
+//#define NO_COMPRESSION
+
+/**
  * Use Felics lossless compression.
  */
 #define FELICS

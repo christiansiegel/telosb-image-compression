@@ -18,27 +18,39 @@ implementation {
   //(De-)Compression
   components new CircularBufferC(COMPRESSION_BUF_SIZE) as CompressionBuffer;
 
-#ifdef SENDER
+#ifdef SENDER // -------------------------------
   components SenderAppC as App;
   components SerialSenderC as Serial;
+#ifndef NO_COMPRESSION
   components CompressionC as Compression;
+#endif
   components RFSenderC as Rf;
 
   Serial.OutBuffer->FlashBuffer;
+#ifdef NO_COMPRESSION
+  Rf.InBuffer->FlashBuffer;
+#else
   Compression.InBuffer->FlashBuffer;
   Compression.OutBuffer->CompressionBuffer;
   Rf.InBuffer->CompressionBuffer;
-#else // RECEIVER
+#endif
+#else // RECEIVER ------------------------------
   components ReceiverAppC as App;
   components SerialReceiverC as Serial;
+#ifndef NO_COMPRESSION
   components DecompressionC as Compression;
+#endif
   components RFReceiverC as Rf;
 
   Serial.InBuffer->FlashBuffer;
+#ifdef NO_COMPRESSION
+  Rf.OutBuffer->FlashBuffer;
+#else
   Rf.OutBuffer->CompressionBuffer;
   Compression.InBuffer->CompressionBuffer;
   Compression.OutBuffer->FlashBuffer;
 #endif
+#endif // --------------------------------------
 
   App.Boot->MainC;
   Serial.Boot->MainC;
@@ -50,7 +62,9 @@ implementation {
   App.FlashReader->Flash;
   
   App.Serial->Serial;
+#ifndef NO_COMPRESSION
   App.Compression->Compression;
+#endif
   App.Rf->Rf;
 
   Flash.BlockRead->ImageStorage;
