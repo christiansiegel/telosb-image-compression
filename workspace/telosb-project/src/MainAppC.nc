@@ -14,42 +14,46 @@ implementation {
   components new BlockStorageC(IMAGE_STORAGE) as ImageStorage;
   components new FlashC(IMAGE_SIZE) as Flash;
   components new CircularBufferC(FLASH_BUF_SIZE) as FlashBuffer;
+  
+  //(De-)Compression
+  components new CircularBufferC(COMPRESSION_BUF_SIZE) as CompressionBuffer;
 
 #ifdef SENDER
   components SenderAppC as App;
-
-  // Serial
   components SerialSenderC as Serial;
-
-  // Compression
   components CompressionC as Compression;
-  components new CircularBufferC(COMPRESSION_BUF_SIZE) as CompressionBuffer;
-  
-  // Sending
-  components RFSenderC;
+  components RFSenderC as Rf;
 
-  App.Compression->Compression;
-  App.RFSender->RFSenderC;
-  
   Serial.OutBuffer->FlashBuffer;
-
   Compression.InBuffer->FlashBuffer;
   Compression.OutBuffer->CompressionBuffer;
-  
-  RFSenderC.InBuffer->CompressionBuffer;
+  Rf.InBuffer->CompressionBuffer;
 #else // RECEIVER
-  // TODO
+  components ReceiverAppC as App;
+  components SerialReceiverC as Serial;
+  components DecompressionC as Compression;
+  components RFReceiverC as Rf;
+
+  Serial.InBuffer->FlashBuffer;
+  Rf.OutBuffer->CompressionBuffer;
+  Compression.InBuffer->CompressionBuffer;
+  Compression.OutBuffer->FlashBuffer;
 #endif
 
   App.Boot->MainC;
+  
   App.Leds->LedsC;
   App.GIO3->GIO.Port26; // 6-pin connector -> outer middle pin
+  
   App.FlashWriter->Flash;
   App.FlashReader->Flash;
-  App.SerialControl->Serial;
+  
+  App.Serial->Serial;
+  App.Compression->Compression;
+  App.Rf->Rf;
 
   Flash.BlockRead->ImageStorage;
   Flash.BlockWrite->ImageStorage;
-  Flash.Buffer->FlashBuffer;
   Flash.BufferLowLevel->FlashBuffer;
+  Flash.Buffer->FlashBuffer;
 }

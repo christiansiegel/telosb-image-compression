@@ -10,9 +10,9 @@ module SenderAppC {
     interface HplMsp430GeneralIO as GIO3;
     interface FlashWriter;
     interface FlashReader;
-    interface SerialControl;
+    interface SerialControl as Serial;
     interface Compression;
-    interface RFSender;
+    interface RFSender as Rf;
     interface CircularBufferWrite as FlashBuffer;
   }
 }
@@ -42,10 +42,10 @@ implementation {
     PRINTLN("flash write done => result: %d", error);
     _state = IDLE;
     PRINTLN("entered IDLE");
-    call SerialControl.flashAccessEnd();
+    call Serial.flashAccessEnd();
 
     // simulate received commands
-    signal SerialControl.imageTransmissionOk();
+    signal Serial.imageTransmissionOk();
   }
 
   event void FlashReader.readDone(error_t error) {
@@ -54,33 +54,33 @@ implementation {
 
   event void Compression.compressDone(error_t error) {
     PRINTLN("compression done => result: %d", error);
-    call RFSender.flush();
+    call Rf.flush();
   }
 
-  event void RFSender.sendDone(error_t error) {
+  event void Rf.sendDone(error_t error) {
     PRINTLN("sending done => result: %d", error);
     _state = IDLE;
     PRINTLN("entered IDLE");
-    call SerialControl.rfTransmissionEnd();
+    call Serial.rfTransmissionEnd();
   }
 
-  event void SerialControl.flashAccessOk() {
+  event void Serial.flashAccessOk() {
     if (_state == IDLE) {
     	PRINTLN("entered FLASH_ACCESS");
       _state = FLASH_ACCESS;
       call FlashWriter.write();
-      call SerialControl.flashAccessStart();
+      call Serial.flashAccessStart();
     }
   }
 
-  event void SerialControl.imageTransmissionOk() {
+  event void Serial.imageTransmissionOk() {
     if (_state == IDLE) {
     	PRINTLN("entered RF_TRANSMISSION");
       _state = RF_TRANSMISSION;
       call FlashReader.read();
       call Compression.compress();
-      call RFSender.send();
-      call SerialControl.rfTransmissionStart();
+      call Rf.send();
+      call Serial.rfTransmissionStart();
     }
   }
 
@@ -95,10 +95,10 @@ implementation {
 // simulate received commands
 #ifdef WRITE_FLASH
     PRINTLN("test with prior writing of test data to flash...");
-    signal SerialControl.flashAccessOk();
+    signal Serial.flashAccessOk();
 #else
     PRINTLN("test with existing flash test data...");
-    signal SerialControl.imageTransmissionOk();
+    signal Serial.imageTransmissionOk();
 #endif
   }
 }
