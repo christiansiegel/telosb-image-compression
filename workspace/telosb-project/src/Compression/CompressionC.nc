@@ -381,7 +381,7 @@ implementation {
    * Compression task.
    */
   task void compressTask() {
-    if (_bytesProcessed == IMAGE_STORAGE) {
+    if (_bytesProcessed == IMAGE_SIZE) {
       // Whole image compressed -> signal done
       _running = FALSE;
       signal Compression.compressDone(SUCCESS);

@@ -20,6 +20,9 @@ implementation {
   // Compression
   components CompressionC as Compression;
   components new CircularBufferC(COMPRESSION_BUF_SIZE) as CompressionBuffer;
+  
+  // Sending
+  components RFSenderC;
 
   TestApp.Boot->MainC;
   TestApp.Leds->LedsC;
@@ -27,7 +30,7 @@ implementation {
   TestApp.FlashWriter->Flash;
   TestApp.FlashReader->Flash;
   TestApp.Compression->Compression;
-  TestApp.SendBuffer->CompressionBuffer;  // until we have a sending module
+  TestApp.RFSender->RFSenderC;
   TestApp.FlashBuffer->FlashBuffer;  // until we have a serial receiver module
 
   Flash.BlockRead->ImageStorage;
@@ -37,4 +40,6 @@ implementation {
 
   Compression.InBuffer->FlashBuffer;
   Compression.OutBuffer->CompressionBuffer;
+  
+  RFSenderC.InBuffer->CompressionBuffer;
 }

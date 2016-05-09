@@ -6,6 +6,7 @@
 #ifdef PRINTF_DEBUG
 #include "printf.h"
 #define PRINTLN(fmt, ...) do { printf(fmt, ##__VA_ARGS__); printf("\n"); printfflush(); } while(0);
+// java net.tinyos.tools.PrintfClient -comm serial@/dev/ttyUSB0:telosb
 #endif
 
 #define IMAGE_STORAGE   0

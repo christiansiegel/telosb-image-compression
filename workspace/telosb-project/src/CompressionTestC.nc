@@ -1,6 +1,7 @@
 #include "Defs.h"
+#include "CompressionTestData.h"
 
-#define WRITE_FLASH
+//#define WRITE_FLASH
 
 module CompressionTestC {
   uses {
@@ -10,76 +11,11 @@ module CompressionTestC {
     interface FlashWriter;
     interface FlashReader;
     interface Compression;
+    interface RFSender;
     interface CircularBufferWrite as FlashBuffer;
-    interface CircularBufferRead as SendBuffer;
   }
 }
 implementation {
-#ifdef FELICS
-#include "felics_test_data.h"
-#else
-  uint8_t testData[256] = {
-      0xAA,  // 10101010
-      0xFF,  // 11111111
-      0xFF,  // 11111111
-      0xFF,  // 11111111
-      0xFF,  // 11111111
-      0xFF,  // 11111111
-      0xFF,  // 11111111
-      0xE4   // 11100100
-  };
-#endif
-
-  task void senderTask() {
-    static uint8_t enc[512];
-    bool t = TRUE;
-    static uint16_t blockNr = 0;
-
-    if (call SendBuffer.available() < sizeof(enc)) {
-      post senderTask();
-      return;
-    }
-
-    call SendBuffer.readBlock(enc, sizeof(enc));
-
-#ifdef FELICS
-    t = (bool)(memcmp(&testEncExpected[sizeof(enc) * blockNr], enc, sizeof(enc)) == 0);
-#elif defined(TRUNCATE_1)
-    t &= enc[0] == 0xAA;  // 10101010
-    t &= enc[1] == 0xFF;  // 11111111
-    t &= enc[2] == 0xFE;  // 11111110
-    t &= enc[3] == 0xFE;  // 11111110
-    t &= enc[4] == 0xFF;  // 11111111
-    t &= enc[5] == 0xFF;  // 11111111
-    t &= enc[6] == 0xFF;  // 11111111
-#elif defined(TRUNCATE_2)
-    t &= enc[0] == 0xAB;  // 10101011
-    t &= enc[1] == 0xFF;  // 11111111
-    t &= enc[2] == 0xFF;  // 11111111
-
-    t &= enc[3] == 0xFD;  // 11111101
-    t &= enc[4] == 0xFE;  // 11111110
-    t &= enc[5] == 0xFF;  // 11111111
-#elif defined(TRUNCATE_4)
-    t &= enc[0] == 0xAF;  // 10101111
-    t &= enc[1] == 0xFF;  // 11111111
-    t &= enc[2] == 0xFF;  // 11111111
-    t &= enc[3] == 0xFE;  // 11111110
-#endif
-
-#ifdef FELICS
-    if (blockNr < 3) {
-#elif
-    if (blockNr == 0) {
-#endif
-      PRINTLN("check of %d byte block #%d: %s", sizeof(enc), blockNr,
-              t ? "PASSED" : "FAILED");
-    }
-    blockNr++;
-    
-    post senderTask();
-  }
-
   /**
    * Temporary replacement for the serial receiver.
    */
@@ -107,7 +43,7 @@ implementation {
     if (error == SUCCESS) {
       call FlashReader.read();
       call Compression.compress();
-      post senderTask();
+      call RFSender.send();
     }
   }
 
@@ -117,10 +53,15 @@ implementation {
 
   event void Compression.compressDone(error_t error) {
     PRINTLN("compression done => result: %d", error);
+    call RFSender.flush();
   }
-
+  
+  event void RFSender.sendDone(error_t error) {
+    PRINTLN("sending done => result: %d", error);
+  }
+  
   event void Boot.booted() {
-    call Leds.set(0);
+    call Leds.set(7);
     call GIO3.makeOutput();
     call GIO3.clr();
 
