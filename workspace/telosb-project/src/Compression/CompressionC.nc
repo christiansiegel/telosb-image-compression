@@ -1,4 +1,4 @@
-#include "Config.h"
+#include "Defs.h"
 
 #if !(defined(FELICS) ^ defined(TRUNCATE_1) ^ defined(TRUNCATE_2) ^ \
       defined(TRUNCATE_4))
@@ -305,7 +305,7 @@ implementation {
     } while (x == 0 && y++ != 255 && i < COMPRESS_BLOCK_SIZE);
 
     _bytesProcessed += COMPRESS_BLOCK_SIZE;
-    if (_bytesProcessed == 65536) writeBitFlush();
+    if (_bytesProcessed == IMAGE_SIZE) writeBitFlush();
   }
 #elif defined(TRUNCATE_1)
 #if COMPRESS_BLOCK_SIZE % 8 != 0
@@ -380,8 +380,8 @@ implementation {
   /**
    * Compression task.
    */
-  task void compress() {
-    if (_bytesProcessed == 65536) {
+  task void compressTask() {
+    if (_bytesProcessed == IMAGE_STORAGE) {
       // Whole image compressed -> signal done
       _running = FALSE;
       signal Compression.compressDone(SUCCESS);
@@ -392,7 +392,7 @@ implementation {
       compressBlock();
     }
     // Re-post task until compression is done
-    post compress();
+    post compressTask();
   }
 
   command error_t Compression.compress() {
@@ -412,7 +412,7 @@ implementation {
       _bitBufPos = 8;
 #endif
       // start compression task
-      post compress();
+      post compressTask();
       return SUCCESS;
     }
   }

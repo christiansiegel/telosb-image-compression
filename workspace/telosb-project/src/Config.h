@@ -4,7 +4,7 @@
 /**
  * Use Felics lossless compression.
  */
-#define FELICS
+//#define FELICS
 
 /**
  * Use lossy compression that truncates
@@ -22,7 +22,7 @@
  * Use lossy compression that truncates
  * the four LSBs of every image byte.
  */
-//#define TRUNCATE_4
+#define TRUNCATE_4
 
 /**
  * Size of buffer between flash and (de-)compression.
@@ -52,7 +52,9 @@
  */
 #define SERIAL_PAYLOAD_SIZE 256 /* random value to this point */
 
-#include "printf.h"
-#define PRINTLN(fmt, ...) do { printf(fmt, ##__VA_ARGS__); printf("\n"); printfflush(); } while(0);
+/**
+ * Turn printf debug over serial port on.
+ */
+#define PRINTF_DEBUG
 
 #endif /* CONFIG_H */

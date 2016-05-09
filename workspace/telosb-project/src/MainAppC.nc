@@ -1,5 +1,5 @@
 #include "StorageVolumes.h"
-#include "Config.h"
+#include "Defs.h"
 
 configuration MainAppC {}
 implementation {
@@ -13,8 +13,8 @@ implementation {
   components HplMsp430GeneralIOC as GIO;
 
   // Flash
-  components new BlockStorageC(0) as ImageStorage;
-  components new FlashC(65536) as Flash;
+  components new BlockStorageC(IMAGE_STORAGE) as ImageStorage;
+  components new FlashC(IMAGE_SIZE) as Flash;
   components new CircularBufferC(FLASH_BUF_SIZE) as FlashBuffer;
 
   // Compression
