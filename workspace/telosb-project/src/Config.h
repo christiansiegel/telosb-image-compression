@@ -9,18 +9,18 @@
 /**
  * Compile for receiving node.
  */
-#define RECEIVER
+//#define RECEIVER
 
 /**
  * Use Felics lossless compression.
  */
-//#define FELICS
+#define FELICS
 
 /**
  * Use lossy compression that truncates
  * the LSB of every image byte.
  */
-#define TRUNCATE_1
+//#define TRUNCATE_1
 
 /**
  * Use lossy compression that truncates
@@ -56,7 +56,7 @@
  * Package payload size of the RF package.
  * (114 byte is the maximum package payload for the telosb)
  */
-#define RF_PAYLOAD_SIZE 512
+#define RF_PAYLOAD_SIZE 114
 
 /**
  * Package payload size of serial package.

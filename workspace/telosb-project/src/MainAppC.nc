@@ -18,6 +18,9 @@ implementation {
 #ifdef SENDER
   components SenderAppC as App;
 
+  // Serial
+  components SerialSenderC as Serial;
+
   // Compression
   components CompressionC as Compression;
   components new CircularBufferC(COMPRESSION_BUF_SIZE) as CompressionBuffer;
@@ -27,6 +30,8 @@ implementation {
 
   App.Compression->Compression;
   App.RFSender->RFSenderC;
+  
+  Serial.OutBuffer->FlashBuffer;
 
   Compression.InBuffer->FlashBuffer;
   Compression.OutBuffer->CompressionBuffer;
@@ -39,10 +44,9 @@ implementation {
   App.Boot->MainC;
   App.Leds->LedsC;
   App.GIO3->GIO.Port26; // 6-pin connector -> outer middle pin
-  
   App.FlashWriter->Flash;
   App.FlashReader->Flash;
-  App.FlashBuffer->FlashBuffer;  // until we have a serial receiver module
+  App.SerialControl->Serial;
 
   Flash.BlockRead->ImageStorage;
   Flash.BlockWrite->ImageStorage;

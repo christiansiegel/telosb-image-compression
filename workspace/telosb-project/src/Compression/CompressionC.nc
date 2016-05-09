@@ -1,10 +1,5 @@
 #include "Defs.h"
 
-#if !(defined(FELICS) ^ defined(TRUNCATE_1) ^ defined(TRUNCATE_2) ^ \
-      defined(TRUNCATE_4))
-#error "You have to specify exactly one compression algorithm to use!"
-#endif
-
 /**
  * Compression of a 256x256 pixel greyscale image.
  */
@@ -237,7 +232,7 @@ implementation {
     // pixel iterator for this block
     uint16_t i = 0;
     // temporary input buffer for this compression block
-    uint8_t tmpIn[COMPRESS_BLOCK_SIZE];
+    static uint8_t tmpIn[COMPRESS_BLOCK_SIZE];
 
     // Check if there is enough free space in the output buffer to compress a
     // new block
@@ -316,8 +311,8 @@ implementation {
    */
   inline void compressBlock() {
     uint8_t j, sliced = 0;
-    uint8_t tmpIn[COMPRESS_BLOCK_SIZE];
-    uint8_t tmpOut[COMPRESS_BLOCK_SIZE / 8 * 7];
+    static uint8_t tmpIn[COMPRESS_BLOCK_SIZE];
+    static uint8_t tmpOut[COMPRESS_BLOCK_SIZE / 8 * 7];
     uint16_t iOut, iIn;
     if (call OutBuffer.free() < sizeof(tmpOut)) return;
     if (call InBuffer.readBlock(tmpIn, COMPRESS_BLOCK_SIZE) != SUCCESS) return;
@@ -340,8 +335,8 @@ implementation {
    */
   inline void compressBlock() {
     uint8_t j, sliced = 0;
-    uint8_t tmpIn[COMPRESS_BLOCK_SIZE];
-    uint8_t tmpOut[COMPRESS_BLOCK_SIZE / 4 * 3];
+    static uint8_t tmpIn[COMPRESS_BLOCK_SIZE];
+    static uint8_t tmpOut[COMPRESS_BLOCK_SIZE / 4 * 3];
     uint16_t iOut, iIn;
     if (call OutBuffer.free() < sizeof(tmpOut)) return;
     if (call InBuffer.readBlock(tmpIn, COMPRESS_BLOCK_SIZE) != SUCCESS) return;
@@ -363,8 +358,8 @@ implementation {
    * Compress the next block of pixels and write them to the output.
    */
   inline void compressBlock() {
-    uint8_t tmpIn[COMPRESS_BLOCK_SIZE];
-    uint8_t tmpOut[COMPRESS_BLOCK_SIZE / 2];
+    static uint8_t tmpIn[COMPRESS_BLOCK_SIZE];
+    static uint8_t tmpOut[COMPRESS_BLOCK_SIZE / 2];
     uint16_t iOut, iIn;
     if (call OutBuffer.free() < sizeof(tmpOut)) return;
     call InBuffer.readBlock(tmpIn, COMPRESS_BLOCK_SIZE);

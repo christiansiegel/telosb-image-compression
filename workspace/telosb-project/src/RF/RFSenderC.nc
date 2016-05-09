@@ -11,7 +11,7 @@ implementation {
   uint16_t blockNr;
 
   task void sendTask() {
-    uint8_t enc[RF_PAYLOAD_SIZE];
+    static uint8_t enc[RF_PAYLOAD_SIZE];
     bool t = TRUE;
 
     if (_flush) {
@@ -53,7 +53,7 @@ implementation {
 #endif
 
 #ifdef FELICS
-    if (blockNr < 10)) {
+    if (blockNr < 10) {
 #else
     if (blockNr == 0) {
 #endif
@@ -64,7 +64,7 @@ implementation {
 
     // this would go into the sendDone event handler of the RF module:
     if (_flush) {
-      _running == FALSE;
+      _running = FALSE;
       signal RFSender.sendDone(SUCCESS);
       return;
     } else {
