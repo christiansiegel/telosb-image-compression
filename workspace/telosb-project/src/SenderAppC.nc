@@ -11,9 +11,9 @@ module SenderAppC {
     interface FlashWriter;
     interface FlashReader;
     interface SerialControl as Serial;
- #ifndef NO_COMPRESSION
+#ifndef NO_COMPRESSION
     interface Compression;
- #endif
+#endif
     interface RFSender as Rf;
     interface CircularBufferWrite as FlashBuffer;
   }
@@ -23,15 +23,15 @@ implementation {
     /**
      * Waiting for new commands from the control PC.
      */
-    IDLE,
+    IDLE = 1,
     /**
      * PC accesses flash.
      */
-    FLASH_ACCESS,
+    FLASH_ACCESS = 2,
     /**
      * Motes2mote transmission.
      */
-    RF_TRANSMISSION
+    RF_TRANSMISSION = 4
   };
   typedef enum States state;
 
@@ -40,10 +40,38 @@ implementation {
    */
   state _state = IDLE;
 
+  /**
+   * Set state.
+   * Also prints message and sets leds.
+   *
+   * @param s   new state
+   */
+  void setState(state s) {
+    switch (s) {
+      case IDLE:
+        PRINTLN("entered IDLE");
+        call GIO3.clr();
+        break;
+      case FLASH_ACCESS:
+        PRINTLN("entered FLASH_ACCESS");
+        break;
+      case RF_TRANSMISSION:
+        PRINTLN("entered RF_TRANSMISSION");
+        call GIO3.set();
+        break;
+      default:
+        return;
+    }
+    _state = s;
+#ifdef LEDS_SHOW_STATE
+    call Leds.set((uint8_t)_state);
+#endif
+  }
+
   event void FlashWriter.writeDone(error_t error) {
     PRINTLN("flash write done => result: %d", error);
     _state = IDLE;
-    PRINTLN("entered IDLE");
+
     call Serial.flashAccessEnd();
   }
 
@@ -63,15 +91,13 @@ implementation {
 
   event void Rf.sendDone(error_t error) {
     PRINTLN("sending done => result: %d", error);
-    _state = IDLE;
-    PRINTLN("entered IDLE");
+    setState(IDLE);
     call Serial.rfTransmissionEnd();
   }
 
   event void Serial.flashAccessOk() {
     if (_state == IDLE) {
-    	PRINTLN("entered FLASH_ACCESS");
-      _state = FLASH_ACCESS;
+      setState(FLASH_ACCESS);
       call FlashWriter.write();
       call Serial.flashAccessStart();
     }
@@ -79,8 +105,7 @@ implementation {
 
   event void Serial.imageTransmissionOk() {
     if (_state == IDLE) {
-    	PRINTLN("entered RF_TRANSMISSION");
-      _state = RF_TRANSMISSION;
+      setState(RF_TRANSMISSION);
       call FlashReader.read();
 #ifndef NO_COMPRESSION
       call Compression.compress();
@@ -91,8 +116,7 @@ implementation {
   }
 
   event void Boot.booted() {
-    call Leds.set(0);
     call GIO3.makeOutput();
-    call GIO3.clr();
+    setState(IDLE);
   }
 }

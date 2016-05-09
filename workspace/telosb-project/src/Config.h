@@ -73,4 +73,9 @@
  */
 #define PRINTF_DEBUG
 
+/**
+ * Show current state on LEDs.
+ */
+#define LEDS_SHOW_STATE
+
 #endif /* CONFIG_H */
