@@ -34,7 +34,7 @@
 #      PFLAGS+= -I${TOSDIR}/../contrib/xbow/beta/TASKApp
 # ----------------------------------------------------------------
 
-
+CFLAGS += -I$(TOSDIR)/lib/printf
 
 # The environment variable COMPONENT is set automatically by the
 # plugin.
