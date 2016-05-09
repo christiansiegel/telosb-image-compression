@@ -126,7 +126,8 @@ implementation {
    * @returns The <code>ceil(log2(a))</code> of the input value <code>a</code>.
    */
   inline uint8_t ceillog2(uint16_t a) {
-    uint8_t res = 0;
+    static uint8_t res;
+    res = 0;
     --a;
     while (a) {
       a >>= 1;
@@ -144,8 +145,11 @@ implementation {
    * code increases with range).
    */
   inline void binaryEncode(uint16_t a, uint16_t range) {
-    int8_t bits = ceillog2(range);
-    uint8_t thresh = (uint8_t)((1 << bits) - range);
+  	static int8_t bits;
+  	static uint8_t thresh;
+  	
+    bits = ceillog2(range);
+    thresh = (uint8_t)((1 << bits) - range);
 
     if (a < thresh)
       --bits;
@@ -165,8 +169,11 @@ implementation {
    * code increases with range).
    */
   inline void adjustedBinaryEncode(uint16_t a, uint16_t range) {
-    int8_t bits = ceillog2(range);
-    uint8_t thresh = (uint8_t)((1 << bits) - range);
+  	static int8_t bits;
+    static uint8_t thresh;
+    
+    bits = ceillog2(range);
+    thresh = (uint8_t)((1 << bits) - range);
 
     // ADJUSTED PART START ------------
     a -= ((range - thresh) >> 1);
@@ -209,28 +216,28 @@ implementation {
    */
   inline void compressBlock() {
     // current pixel value
-    uint8_t P;
+    static uint8_t P;
     // pixel value memory to pick the neighbors from
     //
     // ****456789...255
     // 0123P*****...255
     static uint8_t line[256];
     // neighbor pixel value 1 of current pixel
-    uint8_t N1;
+    static uint8_t N1;
     // neighbor pixel value 2 of current pixel
-    uint8_t N2;
+    static uint8_t N2;
     // lower neighbor pixel value of the current pixel
-    uint8_t L;
+    static uint8_t L;
     // higher neighbor pixel value of the current pixel
-    uint8_t H;
+    static uint8_t H;
     // delta between lower and higher neighbor pixel value
-    uint8_t delta;
+    static uint8_t delta;
     // difference between lower/higher neighbor pixel value and the current
     // pixel value if the the current pixel lies outside the range between lower
     // and higher neighbor pixel values
-    uint8_t diff;
+    static uint8_t diff;
     // pixel iterator for this block
-    uint16_t i = 0;
+    static uint16_t i;
     // temporary input buffer for this compression block
     static uint8_t tmpIn[COMPRESS_BLOCK_SIZE];
 
@@ -242,6 +249,7 @@ implementation {
     if (call InBuffer.readBlock(tmpIn, COMPRESS_BLOCK_SIZE) != SUCCESS) return;
 
     // iterate over all image pixels
+    i = 0;
     do {
       do {
         // Felics Step 1:
@@ -310,10 +318,10 @@ implementation {
    * Compress the next block of pixels and write them to the output.
    */
   inline void compressBlock() {
-    uint8_t j, sliced = 0;
+    static uint8_t j, sliced;
     static uint8_t tmpIn[COMPRESS_BLOCK_SIZE];
     static uint8_t tmpOut[COMPRESS_BLOCK_SIZE / 8 * 7];
-    uint16_t iOut, iIn;
+    static uint16_t iOut, iIn;
     if (call OutBuffer.free() < sizeof(tmpOut)) return;
     if (call InBuffer.readBlock(tmpIn, COMPRESS_BLOCK_SIZE) != SUCCESS) return;
     for (iIn = 0, iOut = 0; iIn < COMPRESS_BLOCK_SIZE; iIn++) {
@@ -334,10 +342,10 @@ implementation {
    * Compress the next block of pixels and write them to the output.
    */
   inline void compressBlock() {
-    uint8_t j, sliced = 0;
+    static int8_t j, sliced;
     static uint8_t tmpIn[COMPRESS_BLOCK_SIZE];
     static uint8_t tmpOut[COMPRESS_BLOCK_SIZE / 4 * 3];
-    uint16_t iOut, iIn;
+    static uint16_t iOut, iIn;
     if (call OutBuffer.free() < sizeof(tmpOut)) return;
     if (call InBuffer.readBlock(tmpIn, COMPRESS_BLOCK_SIZE) != SUCCESS) return;
     for (iIn = 0, iOut = 0; iIn < COMPRESS_BLOCK_SIZE; iIn++) {
@@ -360,7 +368,7 @@ implementation {
   inline void compressBlock() {
     static uint8_t tmpIn[COMPRESS_BLOCK_SIZE];
     static uint8_t tmpOut[COMPRESS_BLOCK_SIZE / 2];
-    uint16_t iOut, iIn;
+    static uint16_t iOut, iIn;
     if (call OutBuffer.free() < sizeof(tmpOut)) return;
     call InBuffer.readBlock(tmpIn, COMPRESS_BLOCK_SIZE);
     for (iIn = 0, iOut = 0; iIn < COMPRESS_BLOCK_SIZE; iOut++) {
