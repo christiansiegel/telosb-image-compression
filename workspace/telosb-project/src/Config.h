@@ -19,7 +19,7 @@
 /**
  * Use Felics lossless compression.
  */
-//#define FELICS
+#define FELICS
 
 /**
  * Use lossy compression that truncates
@@ -37,7 +37,7 @@
  * Use lossy compression that truncates
  * the four LSBs of every image byte.
  */
-#define TRUNCATE_4
+//#define TRUNCATE_4
 
 /**
  * Size of buffer between flash and (de-)compression.

@@ -54,7 +54,6 @@ implementation {
     static uint8_t byte;
     // TODO if returns FAIL we get an invalid byte!!
     call InBuffer.read(&byte);
-    PRINTLN("%x ", byte);
     return byte;
   }
 
@@ -64,9 +63,9 @@ implementation {
   * bit buffer was read completely.
   */
   inline uint8_t readBit() {
-    if (_bitBuf == 0) {
+    if (_bitBufPos == 0) {
       _bitBuf = readByte();
-      _bitBuf = 8;
+      _bitBufPos = 8;
     }
     return (_bitBuf >> --_bitBufPos) & 1;
   }

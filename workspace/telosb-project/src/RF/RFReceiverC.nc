@@ -25,10 +25,12 @@ implementation {
       #else
       pos = byteCount <= sizeof(testEncExpected) ? byteCount : 0;
       result = call OutBuffer.writeBlock(&testEncExpected[pos], RF_PAYLOAD_SIZE);
-      
-      //if(byteCount == 0)
-        //PRINT_DUMP(testEncExpected, 16);
       #endif
+      
+      //#ifdef FELICS
+      //if(byteCount == 0)
+      //  PRINT_DUMP(testEncExpected, 16);
+      //#endif
       
       if (result == SUCCESS) {
       	byteCount += RF_PAYLOAD_SIZE;
