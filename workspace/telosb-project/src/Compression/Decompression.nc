@@ -1,5 +1,20 @@
+/**
+ * Decompression of data.
+ */
 interface Decompression {
-  command void InitDecompression(storage_addr_t out_flash_addr);
-  command void DecompressNextChunk(uint8_t* out_chunk);
-  event void decompressChunkDone(uint8_t* out_chunk);
+  /**
+   * Starts decompression process.
+   *
+   * @return
+   *    <li>EBUSY if the decompression is already running
+   *    <li>SUCCESS if the decompression has been started successfully
+   */
+  command error_t decompress();
+
+  /**
+   * Signals the end of the decompression.
+   *
+   * @param error   SUCCESS if the decompression was successful.
+   */
+  event void decompressDone(error_t error);
 }
