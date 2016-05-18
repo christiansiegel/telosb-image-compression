@@ -10,7 +10,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define TEST_IMG_PATH "C:/Projects/felics/felics/test-images/"
+#define TEST_IMG_PATH		"C:/Projects/TI-WSNE-Mini-Project/felics/felics/test-images/"
+#define REAL_TEST_IMG_PATH	"C:/Projects/TI-WSNE-Mini-Project/images/binary/"
 
 uint8_t buffer[9999999];
 
@@ -396,7 +397,7 @@ MU_TEST(test_encode_decode_white)
 MU_TEST(test_encode_decode_mix)
 {
 	uint8_t img_orig[256 * 256];
-	uint8_t img_enc[256 * 256 * 2];
+	uint8_t img_enc[256 * 256 * 10];
 	uint8_t img_dec[256 * 256];
 
 	FILE *fp;
@@ -411,6 +412,38 @@ MU_TEST(test_encode_decode_mix)
 
 	int diff = memcmp(img_orig, img_dec, sizeof(img_orig));
 	mu_assert_int_eq(0, diff);
+}
+
+void benchmark() 
+{
+	const char *img_name[6];
+	img_name[0] = "aerial.bin";
+	img_name[1] = "airplane.bin";
+	img_name[2] = "chemicalplant.bin";
+	img_name[3] = "clock.bin";
+	img_name[4] = "moonsurface.bin";
+	img_name[5] = "resolutionchart.bin";
+
+	uint8_t img_orig[256 * 256];
+	uint8_t img_enc[256 * 256];
+
+	FILE *fp;
+
+	for (int i = 0; i < 6; ++i) {
+		char filename[200];
+		strcpy_s(filename, sizeof(filename), REAL_TEST_IMG_PATH);
+		strcat_s(filename, sizeof(filename), img_name[i]);
+
+		
+
+		fopen_s(&fp, filename, "rb");
+		fread(img_orig, sizeof(img_orig), 1, fp);
+		fclose(fp);
+
+		int len = encode(img_orig, img_enc);
+
+		printf("benchmark: %s \t %d bytes\n", img_name[i], len);
+	}
 }
 
 MU_TEST_SUITE(test_suite)
@@ -434,13 +467,16 @@ MU_TEST_SUITE(test_suite)
 
 	MU_RUN_TEST(test_encode_decode_black);
 	MU_RUN_TEST(test_encode_decode_white);
-	MU_RUN_TEST(test_encode_decode_mix);
+	//MU_RUN_TEST(test_encode_decode_mix);
 }
 
 int main()
 {
 	MU_RUN_SUITE(test_suite);
 	MU_REPORT();
+
+	benchmark();
+
 	return 0;
 }
 
