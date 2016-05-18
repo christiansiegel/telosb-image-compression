@@ -1,8 +1,11 @@
 #include "felics.h"
 
+#define STATIC_K
+
 enum {
 	MAX_VAL = 255,
-	K = 4,
+	K = 2,
+	MAX_K = 8, // = ceillog_2(MAX_VAL)
 	IN_RANGE     = 0,
 	OUT_OF_RANGE = 1,
 	BELOW_RANGE  = 0,
@@ -15,6 +18,11 @@ uint32_t encode(uint8_t *img_in, uint8_t *img_out)
 
 	// neighbor memory      // ****456789...255
 	uint8_t line[256];      // 0123P*****...255
+
+#ifndef STATIC_K
+	uint32_t cumul_k[256][MAX_K];
+	memset(cumul_k, 0, sizeof(cumul_k));
+#endif // !STATIC_K
 
 	uint8_t x = 0;
 	uint8_t y = 0;
@@ -113,7 +121,28 @@ uint32_t encode(uint8_t *img_in, uint8_t *img_out)
 					diff = P - H - 1;
 				}
 
+#ifndef STATIC_K
+				uint8_t k = 0;
+
+				uint32_t min = cumul_k[delta][0];
+				for (uint8_t i = 1; i < MAX_K; i++)
+				{
+					if (cumul_k[delta][i] < min)
+					{
+						min = cumul_k[delta][i];
+						k = i;
+					}
+				}
+
+				golomb_rice_encode(diff, k);
+
+				for (uint8_t i = 0; i < MAX_K; i++)
+					cumul_k[delta][i] += (diff >> i) + 1 + i;
+#else
 				golomb_rice_encode(diff, K);
+#endif
+
+				
 			}
 		} while (x++ != 255);
 	} while (y++ != 255);
@@ -129,6 +158,11 @@ void decode(uint8_t *img_in, uint8_t *img_out)
 
 	// neighbor memory      // ****456789...255
 	uint8_t line[256];      // 0123P*****...255
+
+#ifndef STATIC_K
+	uint32_t cumul_k[256][MAX_K];
+	memset(cumul_k, 0, sizeof(cumul_k));
+#endif
 
 	uint8_t x = 0;
 	uint8_t y = 0;
@@ -201,7 +235,27 @@ void decode(uint8_t *img_in, uint8_t *img_out)
 			{
 				uint8_t flag = read_bit();
 
-				uint8_t diff = golomb_rice_decode(4);
+#ifndef STATIC_K
+				uint8_t k = 0;
+				uint32_t min = cumul_k[delta][0];
+				for (uint8_t i = 1; i < MAX_K; i++)
+				{
+					if (cumul_k[delta][i] < min)
+					{
+						min = cumul_k[delta][i];
+						k = i;
+					}
+				}
+
+				uint8_t diff = golomb_rice_decode(k);
+
+				for (uint8_t i = 0; i < MAX_K; i++)
+				{
+					cumul_k[delta][i] += (diff >> i) + 1 + i;
+				}
+#else
+				uint8_t diff = golomb_rice_decode(K);
+#endif
 
 				if (flag == BELOW_RANGE)
 					P = L - diff - 1;
