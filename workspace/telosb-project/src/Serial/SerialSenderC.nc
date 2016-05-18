@@ -41,7 +41,7 @@ implementation {
 
   command void SerialControl.flashAccessEnd() {
     // simulate received command:
-    signal SerialControl.imageTransmissionOk();
+    signal SerialControl.rfTransmissionOk();
   }
 
   command void SerialControl.rfTransmissionStart() {}
@@ -52,7 +52,7 @@ implementation {
 #ifdef SIMULATE_WRITE_FLASH
     signal SerialControl.flashAccessOk();
 #else
-    signal SerialControl.imageTransmissionOk();
+    signal SerialControl.rfTransmissionOk();
 #endif
   }
 }

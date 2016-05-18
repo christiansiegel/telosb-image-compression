@@ -22,32 +22,6 @@ implementation {
   uint32_t _bytesProcessed;
 
 #ifdef FELICS
-  enum {
-    /**
-     * Parameter K of Golomb-Rice codes.
-     */
-    K = 4,
-    /**
-     * Bit flag for pixel values that are in the range of their two neighbors.
-     */
-    IN_RANGE = 0,
-    /**
-     * Bit flag for pixel values that are out of the range of their two
-     * neighbors.
-     */
-    OUT_OF_RANGE = 1,
-    /**
-     * Bit flag for pixel values that are below the range of their two
-     * neighbors.
-     */
-    BELOW_RANGE = 0,
-    /**
-     * Bit flag for pixel values that are above the range of their two
-     * neighbors.
-     */
-    ABOVE_RANGE = 1
-  };
-
   /**
    * X-coordinate of currently processed pixel.
    */
@@ -77,9 +51,10 @@ implementation {
  *            it in @see m_encoded_bit_buf.
  */
   inline uint8_t readByte() {
-    uint8_t byte;
+    static uint8_t byte;
     // TODO if returns FAIL we get an invalid byte!!
     call InBuffer.read(&byte);
+    PRINTLN("%x ", byte);
     return byte;
   }
 
@@ -104,7 +79,8 @@ implementation {
    * @returns The <code>ceil(log2(a))</code> of the input value <code>a</code>.
    */
   inline uint8_t ceillog2(uint16_t a) {
-    uint8_t res = 0;
+    static uint8_t res;
+    res = 0;
     --a;
     while (a) {
       a >>= 1;
@@ -113,13 +89,14 @@ implementation {
     return res;
   }
 
-  inline uint8_t binaryDecode(uint16_t range)  // range = 2..256
-  {
-    uint8_t bits = ceillog2(range);
-    uint8_t thresh = (uint8_t)((1 << bits) - range);
+  inline uint8_t binaryDecode(uint16_t range) {
+    static uint8_t bits, thresh, i;
+    static uint16_t a;
 
-    uint16_t a = 0;
-    uint8_t i;
+    bits = ceillog2(range);
+    thresh = (uint8_t)((1 << bits) - range);
+
+    a = 0;
     for (i = 0; i < bits - 1; i++) a += a + readBit();
 
     if (a >= thresh) {
@@ -139,13 +116,14 @@ implementation {
    * @param range The range of input parameters (possible length of the binary
    * code increases with range).
    */
-  inline uint8_t adjustedBinaryDecode(uint16_t range)  // range = 2..256
-  {
-    uint8_t bits = ceillog2(range);
-    uint8_t thresh = (uint8_t)((1 << bits) - range);
+  inline uint8_t adjustedBinaryDecode(uint16_t range) {
+    static uint8_t bits, thresh, i;
+    static uint16_t a;
 
-    uint16_t a = 0;
-    uint8_t i;
+    bits = ceillog2(range);
+    thresh = (uint8_t)((1 << bits) - range);
+
+    a = 0;
     for (i = 0; i < bits - 1; i++) a += a + readBit();
 
     if (a >= thresh) {
@@ -154,10 +132,8 @@ implementation {
     }
 
     // ADJUSTED PART START ------------
-
     a += ((range - thresh) >> 1);
     if ((int16_t)a >= range) a -= range;
-
     // ADJUSTED PART END --------------
 
     return (uint8_t)a;
@@ -170,7 +146,8 @@ implementation {
    * @param a     The input parameter.
    */
   inline uint16_t unaryDecode() {
-    uint16_t a = 0;
+    static uint16_t a;
+    a = 0;
     while (readBit()) ++a;
     return a;
   }
@@ -183,7 +160,7 @@ implementation {
    * @param k     The parameter K of the golomb-rice code.
    */
   inline uint8_t golombRiceDecode(uint8_t k) {
-    uint8_t a;
+    static uint8_t a;
     a = (uint8_t)(unaryDecode() << k);
     if (k > 0) a |= binaryDecode(1 << k);
     return a;
@@ -194,29 +171,29 @@ implementation {
    */
   inline void decompressBlock() {
     // current pixel value
-    uint8_t P;
+    static uint8_t P;
     // pixel value memory to pick the neighbors from
     //
     // ****456789...255
     // 0123P*****...255
     static uint8_t line[256];
     // neighbor pixel value 1 of current pixel
-    uint8_t N1;
+    static uint8_t N1;
     // neighbor pixel value 2 of current pixel
-    uint8_t N2;
+    static uint8_t N2;
     // lower neighbor pixel value of the current pixel
-    uint8_t L;
+    static uint8_t L;
     // higher neighbor pixel value of the current pixel
-    uint8_t H;
+    static uint8_t H;
     // delta between lower and higher neighbor pixel value
-    uint8_t delta;
+    static uint8_t delta;
     // difference between lower/higher neighbor pixel value and the current
     // pixel value if the the current pixel lies outside the range between lower
     // and higher neighbor pixel values
-    uint8_t diff;
-    uint8_t flag;
+    static uint8_t diff;
+    static uint8_t flag;
     // pixel iterator for this block
-    uint16_t i = 0;
+    static uint16_t i;
 
     // Check if there is enough available data in the input buffer to decode a
     // block.
@@ -225,6 +202,7 @@ implementation {
     if (call InBuffer.available() < COMPRESS_BLOCK_SIZE) return;
 
     // iterate over all image pixels
+    i = 0;
     do {
       do {
         i++;
@@ -246,7 +224,7 @@ implementation {
             N2 = N1;
           } else {
             line[x] = P = readByte();
-            _outBuf[_outBufPos++] = P;
+            call OutBuffer.write(P);
             continue;
           }
         }
@@ -273,7 +251,7 @@ implementation {
             P = diff + H + 1;
         }
         line[x] = P;
-        _outBuf[_outBufPos++] = P;
+        call OutBuffer.write(P);
       } while (x++ != 255 && i < COMPRESS_BLOCK_SIZE);
     } while (x == 0 && y++ != 255 && i < COMPRESS_BLOCK_SIZE);
 
@@ -287,17 +265,20 @@ implementation {
    * Compress the next block of pixels and write them to the output.
    */
   inline void decompressBlock() {
-    uint8_t tmp[COMPRESS_BLOCK_SIZE / 8 * 7], j, sliced = 0;
-    uint16_t i;
-    if (call InBuffer.readBlock(tmp, sizeof(tmp)) == SUCCESS) {
-      for (i = 0; i < sizeof(tmp);) {
+    static uint8_t j, sliced;
+    static uint8_t tmpIn[COMPRESS_BLOCK_SIZE / 8 * 7];
+    static uint8_t tmpOut[COMPRESS_BLOCK_SIZE];
+    static uint16_t iOut, iIn;
+    if (call InBuffer.readBlock(tmpIn, sizeof(tmpIn)) == SUCCESS) {
+      for (iIn = iOut = 0; iOut < COMPRESS_BLOCK_SIZE;) {
         sliced = 0;
-        for (j = 0; j < 7; j++, i++) {
-          _outBuf[_outBufPos++] = tmp[i] & 0xFE;
-          sliced |= (tmp[i] & 0x01) << (j + 1);
+        for (j = 0; j < 7; j++, iIn++) {
+          tmpOut[iOut++] = tmpIn[iIn] & 0xFE;
+          sliced |= (tmpIn[iIn] & 0x01) << (j + 1);
         }
-        _outBuf[_outBufPos++] = sliced;
+        tmpOut[iOut++] = sliced;
       }
+      call OutBuffer.writeBlock(tmpOut, COMPRESS_BLOCK_SIZE);
       _bytesProcessed += COMPRESS_BLOCK_SIZE;
     }
   }
@@ -309,17 +290,20 @@ implementation {
    * Compress the next block of pixels and write them to the output.
    */
   inline void decompressBlock() {
-    uint8_t tmp[COMPRESS_BLOCK_SIZE / 4 * 3], j, sliced;
-    uint16_t i;
-    if (call InBuffer.readBlock(tmp, sizeof(tmp)) == SUCCESS) {
-      for (i = 0; i < sizeof(tmp);) {
+    static uint8_t j, sliced;
+    static uint8_t tmpIn[COMPRESS_BLOCK_SIZE / 4 * 3];
+    static uint8_t tmpOut[COMPRESS_BLOCK_SIZE];
+    static uint16_t iOut, iIn;
+    if (call InBuffer.readBlock(tmpIn, sizeof(tmpIn)) == SUCCESS) {
+      for (iIn = iOut = 0; iOut < COMPRESS_BLOCK_SIZE;) {
         sliced = 0;
-        for (j = 0; j < 3; j++, i++) {
-          _outBuf[_outBufPos++] = tmp[i] & 0xFC;
-          sliced |= (tmp[i] & 0x03) << 2 * (j + 1);
+        for (j = 0; j < 3; j++, iIn++) {
+          tmpOut[iOut++] = tmpIn[iIn] & 0xFC;
+          sliced |= (tmpIn[iIn] & 0x03) << 2 * (j + 1);
         }
-        _outBuf[_outBufPos++] = sliced;
+        tmpOut[iOut++] = sliced;
       }
+      call OutBuffer.writeBlock(tmpOut, COMPRESS_BLOCK_SIZE);
       _bytesProcessed += COMPRESS_BLOCK_SIZE;
     }
   }
@@ -331,13 +315,15 @@ implementation {
    * Decompress the next block of pixels and write them to the output.
    */
   inline void decompressBlock() {
-    uint8_t tmpIn[COMPRESS_BLOCK_SIZE / 2];
-    uint8_t tmpOut[COMPRESS_BLOCK_SIZE];
-    uint16_t iOut, iIn;
-    if (call InBuffer.readBlock(tmpIn, sizeof(tmpIn) == SUCCESS) {
-      for (iIn = 0, iOut = 0; iOut < COMPRESS_BLOCK_SIZE; iIn++) {
-        tmpOut[iIn++] = iIn[iIn] & 0xF0;
-        tmpOut[iIn++] = iIn[iIn] << 4;
+    static uint8_t tmpIn[COMPRESS_BLOCK_SIZE / 2];
+    static uint8_t tmpOut[COMPRESS_BLOCK_SIZE];
+    static uint16_t iOut, iIn;
+    
+    if (call InBuffer.readBlock(tmpIn, sizeof(tmpIn)) == SUCCESS) {
+    	
+      for (iIn = iOut = 0; iOut < COMPRESS_BLOCK_SIZE; iIn++) {
+        tmpOut[iOut++] = tmpIn[iIn] & 0xF0;
+        tmpOut[iOut++] = tmpIn[iIn] << 4;
       }
       call OutBuffer.writeBlock(tmpOut, COMPRESS_BLOCK_SIZE);
       _bytesProcessed += COMPRESS_BLOCK_SIZE;
@@ -372,7 +358,7 @@ implementation {
       // reset state variables and buffers
       _running = TRUE;
       _bytesProcessed = 0;
-      
+
       call OutBuffer.clear();
 #ifdef FELICS
       x = y = 0;

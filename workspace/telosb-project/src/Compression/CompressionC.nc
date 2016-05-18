@@ -22,32 +22,6 @@ implementation {
   uint32_t _bytesProcessed;
 
 #ifdef FELICS
-  enum {
-    /**
-     * Parameter K of Golomb-Rice codes.
-     */
-    K = 4,
-    /**
-     * Bit flag for pixel values that are in the range of their two neighbors.
-     */
-    IN_RANGE = 0,
-    /**
-     * Bit flag for pixel values that are out of the range of their two
-     * neighbors.
-     */
-    OUT_OF_RANGE = 1,
-    /**
-     * Bit flag for pixel values that are below the range of their two
-     * neighbors.
-     */
-    BELOW_RANGE = 0,
-    /**
-     * Bit flag for pixel values that are above the range of their two
-     * neighbors.
-     */
-    ABOVE_RANGE = 1
-  };
-
   /**
    * X-coordinate of currently processed pixel.
    */
@@ -324,7 +298,7 @@ implementation {
     static uint16_t iOut, iIn;
     if (call OutBuffer.free() < sizeof(tmpOut)) return;
     if (call InBuffer.readBlock(tmpIn, COMPRESS_BLOCK_SIZE) != SUCCESS) return;
-    for (iIn = 0, iOut = 0; iIn < COMPRESS_BLOCK_SIZE; iIn++) {
+    for (iIn = iOut = 0; iIn < COMPRESS_BLOCK_SIZE; iIn++) {
       sliced = tmpIn[iIn + 7];
       for (j = 0; j < 7; j++, iIn++, iOut++) {
         tmpOut[iOut] = tmpIn[iIn] & 0xFE;
@@ -348,7 +322,7 @@ implementation {
     static uint16_t iOut, iIn;
     if (call OutBuffer.free() < sizeof(tmpOut)) return;
     if (call InBuffer.readBlock(tmpIn, COMPRESS_BLOCK_SIZE) != SUCCESS) return;
-    for (iIn = 0, iOut = 0; iIn < COMPRESS_BLOCK_SIZE; iIn++) {
+    for (iIn = iOut = 0; iIn < COMPRESS_BLOCK_SIZE; iIn++) {
       sliced = tmpIn[iIn + 3];
       for (j = 0; j < 3; j++, iIn++, iOut++) {
         tmpOut[iOut] = tmpIn[iIn] & 0xFC;
@@ -371,7 +345,7 @@ implementation {
     static uint16_t iOut, iIn;
     if (call OutBuffer.free() < sizeof(tmpOut)) return;
     call InBuffer.readBlock(tmpIn, COMPRESS_BLOCK_SIZE);
-    for (iIn = 0, iOut = 0; iIn < COMPRESS_BLOCK_SIZE; iOut++) {
+    for (iIn = iOut = 0; iIn < COMPRESS_BLOCK_SIZE; iOut++) {
       tmpOut[iOut] = tmpIn[iIn++] & 0xF0;
       tmpOut[iOut] |= tmpIn[iIn++] >> 4;
     }

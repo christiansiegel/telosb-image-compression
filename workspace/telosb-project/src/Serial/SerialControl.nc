@@ -17,7 +17,7 @@ interface SerialControl {
   /**
    * PC wants the mote to enter RF transmission state
    */
-  event void imageTransmissionOk();
+  event void rfTransmissionOk();
 
   /**
    * Mote entered RF transmission state

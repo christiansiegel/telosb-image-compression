@@ -1,7 +1,4 @@
 #include "Defs.h"
-#include "CompressionTestData.h"
-
-#define WRITE_FLASH
 
 module SenderAppC {
   uses {
@@ -19,22 +16,6 @@ module SenderAppC {
   }
 }
 implementation {
-  enum States {
-    /**
-     * Waiting for new commands from the control PC.
-     */
-    IDLE = 1,
-    /**
-     * PC accesses flash.
-     */
-    FLASH_ACCESS = 2,
-    /**
-     * Motes2mote transmission.
-     */
-    RF_TRANSMISSION = 4
-  };
-  typedef enum States state;
-
   /**
    * Current state of the mote.
    */
@@ -68,11 +49,35 @@ implementation {
 #endif
   }
 
+  event void Boot.booted() {
+    call GIO3.makeOutput();
+    setState(IDLE);
+  }
+
+  event void Serial.flashAccessOk() {
+    if (_state == IDLE) {
+      setState(FLASH_ACCESS);
+      call FlashWriter.write();
+      call Serial.flashAccessStart();
+    }
+  }
+
   event void FlashWriter.writeDone(error_t error) {
     PRINTLN("flash write done => result: %d", error);
-    _state = IDLE;
-
+    setState(IDLE);
     call Serial.flashAccessEnd();
+  }
+
+  event void Serial.rfTransmissionOk() {
+    if (_state == IDLE) {
+      setState(RF_TRANSMISSION);
+      call FlashReader.read();
+#ifndef NO_COMPRESSION
+      call Compression.compress();
+#endif
+      call Rf.send();
+      call Serial.rfTransmissionStart();
+    }
   }
 
   event void FlashReader.readDone(error_t error) {
@@ -93,30 +98,5 @@ implementation {
     PRINTLN("sending done => result: %d", error);
     setState(IDLE);
     call Serial.rfTransmissionEnd();
-  }
-
-  event void Serial.flashAccessOk() {
-    if (_state == IDLE) {
-      setState(FLASH_ACCESS);
-      call FlashWriter.write();
-      call Serial.flashAccessStart();
-    }
-  }
-
-  event void Serial.imageTransmissionOk() {
-    if (_state == IDLE) {
-      setState(RF_TRANSMISSION);
-      call FlashReader.read();
-#ifndef NO_COMPRESSION
-      call Compression.compress();
-#endif
-      call Rf.send();
-      call Serial.rfTransmissionStart();
-    }
-  }
-
-  event void Boot.booted() {
-    call GIO3.makeOutput();
-    setState(IDLE);
   }
 }
