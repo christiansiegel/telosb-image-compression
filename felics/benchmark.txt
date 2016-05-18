@@ -1,0 +1,45 @@
+K=dynamic
+benchmark: aerial.bin            48749 bytes	-178
+benchmark: airplane.bin          28192 bytes	-1417
+benchmark: chemicalplant.bin     46039 bytes	-83
+benchmark: clock.bin     		 31505 bytes	-1197
+benchmark: moonsurface.bin       42660 bytes	-102
+benchmark: resolutionchart.bin   17874 bytes	+772
+                                 -----------
+								 35836.5		-858.33
+K=1
+benchmark: aerial.bin            53716 bytes
+benchmark: airplane.bin          29609 bytes 	min
+benchmark: chemicalplant.bin     49643 bytes
+benchmark: clock.bin     		 32702 bytes 	min
+benchmark: moonsurface.bin       43515 bytes
+benchmark: resolutionchart.bin   19690 bytes
+                                 -----------
+								 38145.83
+K=2
+benchmark: aerial.bin            49084 bytes
+benchmark: airplane.bin          31275 bytes 
+benchmark: chemicalplant.bin     46122 bytes	min
+benchmark: clock.bin     		 33308 bytes
+benchmark: moonsurface.bin       42558 bytes	min
+benchmark: resolutionchart.bin   17822 bytes
+                                 -----------
+								 36694.83		average min
+K=3
+benchmark: aerial.bin            48927 bytes	min
+benchmark: airplane.bin          34050 bytes
+benchmark: chemicalplant.bin     46798 bytes
+benchmark: clock.bin     		 35419 bytes
+benchmark: moonsurface.bin       44508 bytes
+benchmark: resolutionchart.bin   17158 bytes
+                                 -----------
+								 37810
+K=4
+benchmark: aerial.bin            51087 bytes
+benchmark: airplane.bin          37246 bytes
+benchmark: chemicalplant.bin     49673 bytes
+benchmark: clock.bin     		 38233 bytes
+benchmark: moonsurface.bin       48088 bytes
+benchmark: resolutionchart.bin   17102 bytes	min
+                                 -----------
+								 40238.17
