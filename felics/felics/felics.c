@@ -1,6 +1,6 @@
 #include "felics.h"
 
-#define STATIC_K
+//#define STATIC_K
 
 enum {
 	MAX_VAL = 255,
@@ -20,7 +20,7 @@ uint32_t encode(uint8_t *img_in, uint8_t *img_out)
 	uint8_t line[256];      // 0123P*****...255
 
 #ifndef STATIC_K
-	uint32_t cumul_k[256][MAX_K];
+	uint32_t cumul_k[MAX_K];
 	memset(cumul_k, 0, sizeof(cumul_k));
 #endif // !STATIC_K
 
@@ -124,12 +124,12 @@ uint32_t encode(uint8_t *img_in, uint8_t *img_out)
 #ifndef STATIC_K
 				uint8_t k = 0;
 
-				uint32_t min = cumul_k[delta][0];
+				uint32_t min = cumul_k[0];
 				for (uint8_t i = 1; i < MAX_K; i++)
 				{
-					if (cumul_k[delta][i] < min)
+					if (cumul_k[i] < min)
 					{
-						min = cumul_k[delta][i];
+						min = cumul_k[i];
 						k = i;
 					}
 				}
@@ -137,7 +137,7 @@ uint32_t encode(uint8_t *img_in, uint8_t *img_out)
 				golomb_rice_encode(diff, k);
 
 				for (uint8_t i = 0; i < MAX_K; i++)
-					cumul_k[delta][i] += (diff >> i) + 1 + i;
+					cumul_k[i] += (diff >> i) + 1 + i;
 #else
 				golomb_rice_encode(diff, K);
 #endif
@@ -160,7 +160,7 @@ void decode(uint8_t *img_in, uint8_t *img_out)
 	uint8_t line[256];      // 0123P*****...255
 
 #ifndef STATIC_K
-	uint32_t cumul_k[256][MAX_K];
+	uint32_t cumul_k[MAX_K];
 	memset(cumul_k, 0, sizeof(cumul_k));
 #endif
 
@@ -237,12 +237,12 @@ void decode(uint8_t *img_in, uint8_t *img_out)
 
 #ifndef STATIC_K
 				uint8_t k = 0;
-				uint32_t min = cumul_k[delta][0];
+				uint32_t min = cumul_k[0];
 				for (uint8_t i = 1; i < MAX_K; i++)
 				{
-					if (cumul_k[delta][i] < min)
+					if (cumul_k[i] < min)
 					{
-						min = cumul_k[delta][i];
+						min = cumul_k[i];
 						k = i;
 					}
 				}
@@ -250,9 +250,7 @@ void decode(uint8_t *img_in, uint8_t *img_out)
 				uint8_t diff = golomb_rice_decode(k);
 
 				for (uint8_t i = 0; i < MAX_K; i++)
-				{
-					cumul_k[delta][i] += (diff >> i) + 1 + i;
-				}
+					cumul_k[i] += (diff >> i) + 1 + i;
 #else
 				uint8_t diff = golomb_rice_decode(K);
 #endif
