@@ -21,6 +21,8 @@
     printfflush();              \
   } while (0);
 // java net.tinyos.tools.PrintfClient -comm serial@/dev/ttyUSB0:telosb
+#else
+#define PRINTLN(fmt, ...)
 #endif
 
 void PRINT_DUMP(uint8_t *buf, uint8_t len) {
