@@ -1,22 +1,28 @@
 #ifndef SERIALMESSAGES_H
 #define SERIALMESSAGES_H
 
-// mig java -target=telosb -I%T/lib/oski -java-classname=SerialDataMsg SerialMessages.h serial_data_msg -o SerialDataMsg.java
-// mig java -target=telosb -I%T/lib/oski -java-classname=SerialCmdMsg SerialMessages.h serial_cmd_msg -o SerialCmdMsg.java
-// javac *.java
-// java SerialComm -comm serial@/dev/ttyUSB0:telosb
+#define SERIAL_PAYLOAD_SIZE 32
 
-typedef nx_struct serial_data_msg {
-  nx_uint8_t data[128];
-} serial_data_msg_t;
+typedef nx_struct SerialDataMsg {
+  nx_uint8_t data[SERIAL_PAYLOAD_SIZE];
+} SerialDataMsg_t;
 
-typedef nx_struct serial_cmd_msg {
+typedef nx_struct SerialCmdMsg {
   nx_uint8_t cmd;
-} serial_cmd_msg_t;
+} SerialCmdMsg_t;
 
 enum {
-  AM_SERIAL_DATA_MSG = 0x89,
-  AM_SERIAL_CMD_MSG = 0x90
+  AM_SERIALDATAMSG = 0x89,
+  AM_SERIALCMDMSG = 0x90,
+
+  CMD_FLASH_REQUEST = 0,
+  CMD_FLASH_START = 1,
+  CMD_FLASH_ACK = 2,
+  CMD_FLASH_END = 3,
+  
+  CMD_RF_REQUEST = 10,
+  CMD_RF_START = 11,
+  CMD_RF_END = 12
 };
 
 #endif /* SERIALMESSAGES_H */
