@@ -53,7 +53,7 @@ implementation {
   inline uint8_t readByte() {
     static uint8_t byte;
     // TODO if returns FAIL we get an invalid byte!!
-    call InBuffer.read(&byte);
+    call InBuffer.read(&byte); // adds 8 seconds
     return byte;
   }
 
