@@ -85,4 +85,12 @@ enum {
 
 #endif
 
+/**
+ * Radio message structure. Header, Footer and Metadata are kept (commented out) for future use.
+ */
+	typedef nx_struct reliable_msg_t {
+		//nx_uint16_t cookie; not needed because internal acknowledgement is used
+		nx_uint16_t data[RF_PAYLOAD_SIZE];
+	} reliable_msg_t;
+
 #endif /* DEFS_H */

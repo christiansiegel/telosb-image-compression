@@ -33,6 +33,7 @@ implementation {
   Compression.InBuffer->FlashBuffer;
   Compression.OutBuffer->CompressionBuffer;
   Rf.InBuffer->CompressionBuffer;
+  Rf->PacketAcknowledgements; //Added for acks working on a lower networking layer
 #endif
 #else // RECEIVER ------------------------------
   components ReceiverAppC as App;
