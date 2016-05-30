@@ -28,4 +28,13 @@ interface SerialControl {
    * Mote left RF transmission state.
    */
   command void rfTransmissionEnd();
+  
+#ifdef RECEIVER
+    /**
+   * Signals that the sending has ended.
+   *
+   * @param error    TODO
+   */
+  event void sendDone(error_t error);
+#endif
 }

@@ -122,6 +122,7 @@ implementation {
 	}
 #else // RECEIVER
     message_t _serialDataMsg;
+    uint32_t _byteCount;
 
     task void retryDataSend() {
     	error_t result = call AMDataSend.send(AM_BROADCAST_ADDR, &_serialDataMsg, sizeof(SerialDataMsg_t));
@@ -130,7 +131,7 @@ implementation {
     }
 
 	task void sendImageTask() {
-		if(!_sending && call InBuffer.readBlock(_chunk, sizeof(_chunk)) == SUCCESS) {
+		if(!_sending && call InBuffer.readBlock(_chunk, sizeof(SerialDataMsg_t)) == SUCCESS) {
             SerialDataMsg_t* m = (SerialDataMsg_t*)call AMDataSend.getPayload(&_serialDataMsg, sizeof(SerialDataMsg_t));
 	        memcpy(m->data, _chunk, sizeof(SerialDataMsg_t));
             if(call AMDataSend.send(AM_BROADCAST_ADDR, &_serialDataMsg, sizeof(SerialDataMsg_t)) != SUCCESS) {
@@ -144,6 +145,9 @@ implementation {
 	
 	event void AMDataSend.sendDone(message_t * msg, error_t error) {
 		_sending = FALSE;
+		_byteCount += sizeof(SerialDataMsg_t);
+        if(_byteCount >= IMAGE_SIZE)
+            signal SerialControl.sendDone(SUCCESS);
 	}
 #endif
 
@@ -151,6 +155,7 @@ implementation {
 		post sendCmdFlashStart();
 		
 #ifdef RECEIVER
+        _byteCount = 0;
 		post sendImageTask();
 #endif
 	}
