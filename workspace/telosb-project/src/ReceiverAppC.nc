@@ -64,6 +64,10 @@ implementation {
 
   event void FlashReader.readDone(error_t error) {
     PRINTLN("flash read done => result: %d", error);
+  }
+  
+  event void Serial.sendDone(error_t error) {
+  	PRINTLN("serial send done => result: %d", error);
     setState(IDLE);
     call Serial.flashAccessEnd();
   }
