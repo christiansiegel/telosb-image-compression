@@ -73,4 +73,9 @@
  */
 #define LEDS_SHOW_STATE
 
+/**
+ * Specifies the identifier for the Active message. Sender and receiver must use the same.
+ */
+#define AM_TYPE 4
+
 #endif /* CONFIG_H */

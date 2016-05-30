@@ -31,7 +31,20 @@ implementation {
 #ifdef SENDER // -------------------------------
   components SenderAppC as App;
   components new SerialAMReceiverC(AM_SERIALDATAMSG) as SerialDataReceiver;
+  
+  components RFSenderC as Rf;
+  components new AMSenderC(AM_TYPE);
+  components new AMReceiverC(AM_TYPE);
+  components ActiveMessageC;
+    
   Serial.AMDataReceive->SerialDataReceiver;
+  
+  //Define the wiring to the generic interfaces 
+  Rf.AMSend->AMSenderC;
+  Rf.Packet->AMSenderC;
+  Rf.AMControl->ActiveMessageC;
+  Rf.AckReceiver-> AMReceiverC;
+  
 #ifndef NO_COMPRESSION
   components CompressionC as Compression;
 #endif
@@ -49,12 +62,18 @@ implementation {
 #else // RECEIVER ------------------------------
   components ReceiverAppC as App;
   components new SerialAMSenderC(AM_SERIALDATAMSG) as SerialDataSender;
+  
+  components new AMReceiverC(AM_TYPE);
+  components new AMSenderC(AM_TYPE);
+  components ActiveMessageC;
+  
   Serial.AMDataSend->SerialDataSender;
 #ifndef NO_COMPRESSION
   components DecompressionC as Compression;
 #endif
   components RFReceiverC as Rf;
-
+  Rf.AMControl -> ActiveMessageC;
+  // Set up the buffer 
   Serial.InBuffer->FlashBuffer;
 #ifdef NO_COMPRESSION
   Rf.OutBuffer->FlashBuffer;
@@ -62,6 +81,13 @@ implementation {
   Rf.OutBuffer->CompressionBuffer;
   Compression.InBuffer->CompressionBuffer;
   Compression.OutBuffer->FlashBuffer;
+  
+  // Set up the data layer
+  Rf.AMSend -> AMSenderC;
+  Rf.Packet -> ActiveMessageC.Packet;
+  Rf.AMPacket -> ActiveMessageC.AMPacket;
+  
+  Rf.Leds -> LedsC.Leds;
 #endif
 #endif // --------------------------------------
 
