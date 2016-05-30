@@ -64,11 +64,6 @@
 #define RF_PAYLOAD_SIZE 114
 
 /**
- * Package payload size of serial package.
- */
-#define SERIAL_PAYLOAD_SIZE 256 /* random value to this point */
-
-/**
  * Turn printf debug over serial port on.
  */
 #define PRINTF_DEBUG

@@ -1,5 +1,6 @@
 #include "StorageVolumes.h"
 #include "Defs.h"
+#include "SerialMessages.h"
 
 configuration MainAppC {}
 implementation {
@@ -18,9 +19,20 @@ implementation {
   //(De-)Compression
   components new CircularBufferC(COMPRESSION_BUF_SIZE) as CompressionBuffer;
 
+  // Serial
+  components SerialModuleC as Serial;
+  components SerialActiveMessageC;
+  components new SerialAMSenderC(AM_SERIALCMDMSG) as SerialCmdSender;
+  components new SerialAMReceiverC(AM_SERIALCMDMSG) as SerialCmdReceiver;
+  Serial.AMControl->SerialActiveMessageC; 
+  Serial.AMCmdSend->SerialCmdSender;
+  Serial.AMCmdReceive->SerialCmdReceiver;
+  Serial.Leds->LedsC;
+  
 #ifdef SENDER // -------------------------------
   components SenderAppC as App;
-  components SerialSenderC as Serial;
+  components new SerialAMReceiverC(AM_SERIALDATAMSG) as SerialDataReceiver;
+  Serial.AMDataReceive->SerialDataReceiver;
 #ifndef NO_COMPRESSION
   components CompressionC as Compression;
 #endif
@@ -33,10 +45,12 @@ implementation {
   Compression.InBuffer->FlashBuffer;
   Compression.OutBuffer->CompressionBuffer;
   Rf.InBuffer->CompressionBuffer;
+  Rf->PacketAcknowledgements; //Added for acks working on a lower networking layer
 #endif
 #else // RECEIVER ------------------------------
   components ReceiverAppC as App;
-  components SerialReceiverC as Serial;
+  components new SerialAMSenderC(AM_SERIALDATAMSG) as SerialDataSender;
+  Serial.AMDataSend->SerialDataSender;
 #ifndef NO_COMPRESSION
   components DecompressionC as Compression;
 #endif
