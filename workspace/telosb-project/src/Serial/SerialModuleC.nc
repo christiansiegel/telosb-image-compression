@@ -82,6 +82,13 @@ implementation {
         if(!_sending) sendCmd(CMD_RF_END);
         else post sendCmdRfEnd();
     }
+    
+    //debug:
+    //uint8_t debugVal;
+    //task void sendDebug() {
+    //	if(!_sending) sendCmd(debugVal);
+    //    else post sendDebug();
+    //}
 
 	command void SerialControl.flashAccessEnd() {
 		post sendCmdFlashEnd();
@@ -122,7 +129,8 @@ implementation {
 	event message_t * AMDataReceive.receive(message_t * msg, void * payload,
 			uint8_t len) {
 		if(len == sizeof(SerialDataMsg_t)) {
-			memcpy(payload, _chunk, sizeof(SerialDataMsg_t));
+			SerialDataMsg_t * m = (SerialDataMsg_t*) payload;
+			memcpy(_chunk, m->data, sizeof(SerialDataMsg_t));
             post retrySaveChunk();    
 		}
 		return msg;
@@ -137,7 +145,7 @@ implementation {
 
 	void sendData() {
 		SerialDataMsg_t* m = (SerialDataMsg_t*)call AMDataSend.getPayload(&_serialDataMsg, sizeof(SerialDataMsg_t));
-        memcpy(_chunk, m->data, sizeof(SerialDataMsg_t));
+        memcpy(m->data, _chunk, sizeof(SerialDataMsg_t));
         if(call AMDataSend.send(AM_BROADCAST_ADDR, &_serialDataMsg, sizeof(SerialDataMsg_t)) != SUCCESS) {
             _sending = TRUE;
             post retryDataSend();  
