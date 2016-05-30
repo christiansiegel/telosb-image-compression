@@ -48,7 +48,7 @@ implementation {
 #ifndef NO_COMPRESSION
   components CompressionC as Compression;
 #endif
-  components RFSenderC as Rf;
+  //components RFSenderC as Rf;
 
   Serial.OutBuffer->FlashBuffer;
 #ifdef NO_COMPRESSION

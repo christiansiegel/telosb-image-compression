@@ -10,10 +10,9 @@ module RFSenderC {
   provides interface RFSender;
 }
 implementation {
-  bool _running;
-  bool _flush;
-  uint8_t _message_id;
-  bool _acked;
+  bool _running = FALSE;
+  bool _flush = FALSE;
+  bool _acked = FALSE;
   message_t pkt;
   static uint8_t enc[RF_PAYLOAD_SIZE];
 
@@ -23,7 +22,6 @@ implementation {
 			reliable_msg_t* msg = (reliable_msg_t*)(call Packet.getPayload(&pkt, sizeof(reliable_msg_t)));
 			//Here we set our message payload [msg->data = enc;]
 			memcpy(msg->data, &enc ,sizeof(enc));
-			msg->message_id = _message_id;
 			_acked = FALSE;
 			call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(reliable_msg_t));	
 		}
@@ -73,7 +71,6 @@ implementation {
 		return EBUSY;
     } else {
 	    _running = TRUE;
-	    _flush = FALSE; //Check if needed
 	    post checkBuffer();
 	    return SUCCESS; //check if we finished sending the whole content?
     }
@@ -90,7 +87,8 @@ implementation {
   	}
   }
   
-   event void AMControl.startDone(error_t error){
+   event void AMControl.startDone(error_t error)
+   {
    }
    
    event void AMControl.stopDone(error_t error){

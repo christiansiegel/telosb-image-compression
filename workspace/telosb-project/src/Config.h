@@ -4,12 +4,12 @@
 /**
  * Compile for sending node.
  */
-//#define SENDER
+#define SENDER
 
 /**
  * Compile for receiving node.
  */
-#define RECEIVER
+//#define RECEIVER
 
 /**
  * Use no compression.
