@@ -31,12 +31,16 @@ implementation {
     _start = 0;
     _end = 0;
   }
-
-  command uint16_t CircularBufferRead.available() {
+  
+  inline uint16_t available() {
     if (_start <= _end)
       return _end - _start;
     else
-      return SIZE - _start + _end;
+      return SIZE - _start + _end;	
+  }
+
+  command uint16_t CircularBufferRead.available() {
+    return available();
   }
 
   command error_t CircularBufferRead.read(uint8_t * byte) {
@@ -51,7 +55,7 @@ implementation {
 
   command error_t CircularBufferRead.readBlock(uint8_t * block, uint16_t len) {
     static uint16_t i;
-    if (call CircularBufferRead.available() < len) {
+    if (available() < len) {
       return FAIL;
     } else {
       for (i = 0; i < len; i++) {
@@ -62,8 +66,12 @@ implementation {
     }
   }
 
+  inline uint16_t free() {
+    return SIZE - available() - 1;
+  }
+
   command uint16_t CircularBufferWrite.free() {
-    return SIZE - call CircularBufferRead.available() - 1;
+    return free();
   }
 
   command error_t CircularBufferWrite.write(uint8_t byte) {
@@ -79,7 +87,7 @@ implementation {
   command error_t CircularBufferWrite.writeBlock(uint8_t * block,
                                                  uint16_t len) {
     static uint16_t i;
-    if (call CircularBufferWrite.free() < len) {
+    if (free() < len) {
       return FAIL;
     } else {
       for (i = 0; i < len; i++) {

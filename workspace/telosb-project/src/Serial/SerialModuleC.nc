@@ -1,4 +1,3 @@
-#include "CompressionTestData.h"
 #include "Defs.h"
 
 #include "SerialMessages.h"
