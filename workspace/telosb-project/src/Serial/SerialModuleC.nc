@@ -43,7 +43,7 @@ implementation {
         if(call AMCmdSend.send(AM_BROADCAST_ADDR, &_serialMsg, sizeof(SerialCmdMsg_t)) != SUCCESS)
             post retryCmdSend();
     }
-  
+    
     void sendCmd(uint8_t cmd) {
         SerialCmdMsg_t* m = (SerialCmdMsg_t*)call AMCmdSend.getPayload(&_serialMsg, sizeof(SerialCmdMsg_t));
         m->cmd = cmd;
@@ -102,26 +102,11 @@ implementation {
 		post sendCmdRfEnd();
 	}
 
-	// handles received commands from the PC app
-	event message_t * AMCmdReceive.receive(message_t * msg, void * payload, uint8_t len) {
-		if(len == sizeof(SerialCmdMsg_t)) {
-			SerialCmdMsg_t * m = (SerialCmdMsg_t * ) payload;
-			if(m->cmd == CMD_FLASH_REQUEST) {
-				signal SerialControl.flashAccessOk();
-			}
-			else if(m->cmd == CMD_RF_REQUEST) {
-				signal SerialControl.rfTransmissionOk();
-			}
-		}
-		return msg;
-	}
-
 #ifdef SENDER
 	task void retrySaveChunk() {
 		if(call OutBuffer.writeBlock(_chunk, sizeof(_chunk)) != SUCCESS) {
 			post retrySaveChunk();
 		} else {
-            call Leds.led2Toggle();
             post sendCmdFlashAck();	
 		}
 	}
@@ -139,39 +124,53 @@ implementation {
     message_t _serialDataMsg;
 
     task void retryDataSend() {
-        if(call AMDataSend.send(AM_BROADCAST_ADDR, &_serialDataMsg, sizeof(SerialDataMsg_t)) != SUCCESS)
-            post retryDataSend();
+    	error_t result = call AMDataSend.send(AM_BROADCAST_ADDR, &_serialDataMsg, sizeof(SerialDataMsg_t));
+        if(result != SUCCESS)
+        	post retryDataSend();
     }
 
-	void sendData() {
-		SerialDataMsg_t* m = (SerialDataMsg_t*)call AMDataSend.getPayload(&_serialDataMsg, sizeof(SerialDataMsg_t));
-        memcpy(m->data, _chunk, sizeof(SerialDataMsg_t));
-        if(call AMDataSend.send(AM_BROADCAST_ADDR, &_serialDataMsg, sizeof(SerialDataMsg_t)) != SUCCESS) {
-            _sending = TRUE;
-            post retryDataSend();  
-        }
-	}
-	
 	task void sendImageTask() {
-		if(_sending) {
-			post sendImageTask();
-		} else if(call InBuffer.readBlock(_chunk, sizeof(_chunk)) == SUCCESS) {
-			sendData();
+		if(!_sending && call InBuffer.readBlock(_chunk, sizeof(_chunk)) == SUCCESS) {
+            SerialDataMsg_t* m = (SerialDataMsg_t*)call AMDataSend.getPayload(&_serialDataMsg, sizeof(SerialDataMsg_t));
+	        memcpy(m->data, _chunk, sizeof(SerialDataMsg_t));
+            if(call AMDataSend.send(AM_BROADCAST_ADDR, &_serialDataMsg, sizeof(SerialDataMsg_t)) != SUCCESS) {
+                _sending = TRUE;
+                post retryDataSend();  
+            }
 		} else { 
 			post sendImageTask();
 		}
 	}
-
+	
 	event void AMDataSend.sendDone(message_t * msg, error_t error) {
 		_sending = FALSE;
-		post sendImageTask();
 	}
-	#endif
+#endif
 
 	command void SerialControl.flashAccessStart() {
 		post sendCmdFlashStart();
+		
 #ifdef RECEIVER
 		post sendImageTask();
 #endif
 	}
+	
+	// handles received commands from the PC app
+    event message_t * AMCmdReceive.receive(message_t * msg, void * payload, uint8_t len) {
+        if(len == sizeof(SerialCmdMsg_t)) {
+            SerialCmdMsg_t * m = (SerialCmdMsg_t * ) payload;
+            if(m->cmd == CMD_FLASH_REQUEST) {
+                signal SerialControl.flashAccessOk();
+            }
+            else if(m->cmd == CMD_RF_REQUEST) {
+                signal SerialControl.rfTransmissionOk();
+            }
+#ifdef RECEIVER
+            else if(m->cmd == CMD_FLASH_ACK) {
+                post sendImageTask();   
+            }
+#endif
+        }
+        return msg;
+    }
 }
