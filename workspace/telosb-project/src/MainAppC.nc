@@ -27,7 +27,6 @@ implementation {
   Serial.AMControl->SerialActiveMessageC; 
   Serial.AMCmdSend->SerialCmdSender;
   Serial.AMCmdReceive->SerialCmdReceiver;
-  Serial.Leds->LedsC;
   
 #ifdef SENDER // -------------------------------
   components SenderAppC as App;

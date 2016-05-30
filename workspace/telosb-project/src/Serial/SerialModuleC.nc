@@ -18,7 +18,6 @@ module SerialModuleC {
 		interface CircularBufferRead as InBuffer;
 		interface AMSend as AMDataSend;
 		#endif
-		interface Leds;
 	}
 	provides interface SerialControl;
 }
