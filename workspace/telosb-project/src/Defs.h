@@ -61,7 +61,7 @@ enum {
   /**
    * Parameter K of Golomb-Rice codes.
    */
-  K = 4, //TODO change to 2 (tests will fail)
+  K = 2,
   /**
    * Bit flag for pixel values that are in the range of their two neighbors.
    */
