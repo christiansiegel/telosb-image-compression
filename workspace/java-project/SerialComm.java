@@ -217,7 +217,7 @@ public class SerialComm implements MessageListener {
     System.err.println("-> transfer image from mote:         TestSerial <source> r <filename>");
     System.err.println("-> transfer image from mote to mote: TestSerial <source> t");
     System.err.println("");
-    System.err.println("e.g.: TestSerial serial@/dev/ttyUSB0:telosb w img/aerial.bin\n");
+    System.err.println("e.g.: SerialComm serial@/dev/ttyUSB0:telosb w img/aerial.bin\n");
   }
   
   private static byte[] imageFromFile(String fileName) throws IOException { 
