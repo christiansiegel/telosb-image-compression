@@ -1,110 +1,102 @@
 #include "Defs.h"
-#include "CompressionTestData.h"
+#include "RFMessages.h"
 
-module RFReceiverC 
-{
-  	uses interface CircularBufferWrite as OutBuffer;
-  	uses interface AMSend;
-  	uses interface SplitControl as AMControl;
-  	uses interface Packet;
-  	uses interface AMPacket;
- 	uses interface Receive; 
- 	uses interface Leds;
-  	provides interface RFReceiver;
+module RFReceiverC {
+  uses {
+    interface CircularBufferWrite as OutBuffer;
+    interface AMSend;
+    interface SplitControl as AMControl;
+    interface Packet;
+    interface AMPacket;
+    interface Receive as AMReceive;
+    interface Leds;
+  }
+  provides interface RFReceiver;
 }
-implementation 
-{
- 	bool _running;
-  	uint32_t byteCount;
-  	message_t pkt;
-  	uint8_t* LastReceivedData;
-  
-  	task void receiveTask() 
-  	{
-    	static error_t result;
-    	// If we have loaded the image
-	    if (byteCount >= IMAGE_SIZE)
-	  	{
-	      // this check is not possible later because we don't know how many byte are sent. we have to wait for some DONE telegram.
-	      signal RFReceiver.receiveDone(SUCCESS);
-	      return;
-		}
-      	else // Start the image loading and control start 
-      	{	
-      		
-		    // update the bytecount if we succesfully wrote a block
-      		if (result == SUCCESS)
-      		{
-      			PRINTLN("Processing Received data");
-      			// Get the payload for the ack message
-      			ack_msg_t* ReceivedPacket = (ack_msg_t*)call Packet.getPayload(&pkt, sizeof(ack_msg_t));
-      			// Send an ack message
-      			if(call AMSend.send(AM_BROADCAST_ADDR, &pkt, sizeof(ack_msg_t))== SUCCESS)
-      			{
-      				// Load the data into memory
-      				byteCount += RF_PAYLOAD_SIZE;
-      				
-		      		// Write a block on the buffer
-		      		result = call OutBuffer.writeBlock(LastReceivedData, RF_PAYLOAD_SIZE);
-		      		call Leds.led2Toggle();
-      			}
-      		}
-    	}
-    	// Schedule a new receive
-    	post receiveTask();
-  	}
-	
-  	command error_t RFReceiver.receive() 
-  	{ 
-		if (_running)
-	  	{
-	  		// We are busy
-	      	return EBUSY;
-	    } 
-	    else 
-	    {
-    		// Set the initial state 
-      		byteCount = 0;
-	      	_running = TRUE;
-	      	
-      		// Start the controller
-      		call AMControl.start();
-	      	// Schedule the image receive
-	      	post receiveTask();
-	      	return SUCCESS;
-	    }
-   	}
-  
-	event message_t* Receive.receive(message_t* msg, void* payload, uint8_t len)
-	{
-		//Receive packet if we have enough space
-	  	if(call OutBuffer.free() >= RF_PAYLOAD_SIZE)
-	  	{
-	  		if(len == sizeof(reliable_msg_t))
-	  		{
-	  			//pkt = (reliable_msg_t*)payload;
-	  			
-      			reliable_msg_t* ReceivedPacket = (reliable_msg_t*)call Packet.getPayload(&pkt, sizeof(reliable_msg_t));
-	  			LastReceivedData = ReceivedPacket->data;
-	  			PRINTLN("Received Packet");
-	  			// We should be calling the receivetask here
-	  		}
-	  	}
-	  	return msg;
-  	}
-  	
-    event void AMControl.startDone(error_t error)
-    {
-    }
-    event void AMControl.stopDone(error_t error)
-    {
-    		
-    }
-  
+implementation {
+  bool _running;
+  uint16_t _pktCount;
+  message_t _pkt;
+  uint8_t _chunk[RF_PAYLOAD_SIZE - 2];
+  bool _handling;
+  bool _last;
 
-	event void AMSend.sendDone(message_t *msg, error_t error)
-	{
-		// TODO Auto-generated method stub
-	}
+  command error_t RFReceiver.receive() {
+    if (_running) {
+      return EBUSY;
+    } else {
+      // Set the initial state
+      _pktCount = 0;
+      _running = TRUE;
+      _handling = FALSE;
+      _last = FALSE;
 
+      // Start the RF module
+      return call AMControl.start();
+    }
+  }
+
+  task void sendAck() {
+    call AMSend.getPayload(&_pkt, sizeof(RFAckMsg_t));
+    if (call AMSend.send(AM_BROADCAST_ADDR, &_pkt, sizeof(RFAckMsg_t)) !=
+        SUCCESS) {
+      post sendAck();
+    }
+  }
+
+  task void saveTask() {
+    if (call OutBuffer.writeBlock(_chunk, sizeof(_chunk)) == SUCCESS) {
+      post sendAck();
+    } else {
+      post saveTask();
+    }
+  }
+
+  event message_t* AMReceive.receive(message_t * msg, void* payload,
+                                     uint8_t len) {
+    if (_handling) {
+      // We are currently handling a received message so just drop this one.
+      return msg;
+    }
+
+    if (len == sizeof(RFDataMsg_t)) {
+      RFDataMsg_t* m = (RFDataMsg_t*)payload;
+      _handling = TRUE;
+
+      PRINTLN("pkt #%u", m->nr);
+
+      if (m->nr < _pktCount) {
+        // We already handled this message. So our ACK got lost. Just re-ACK.
+        post sendAck();
+        return msg;
+      }
+
+      if (m->nr == 0xFFFF) {
+        // This is the last message. Remember this to shut down afterwards.
+        _last = TRUE;
+      }
+
+      memcpy(_chunk, m->data, sizeof(_chunk));
+      _pktCount++;
+      post saveTask();
+    }
+
+    return msg;
+  }
+
+  event void AMControl.startDone(error_t error) {}
+
+  event void AMControl.stopDone(error_t error) {
+    _running = FALSE;
+    signal RFReceiver.receiveDone(error);
+  }
+
+  event void AMSend.sendDone(message_t * msg, error_t error) {
+    if (error == SUCCESS) {
+      _handling = FALSE;
+      if (_last) call AMControl.stop();
+    } else {
+      post sendAck();
+    }
+  }
 }

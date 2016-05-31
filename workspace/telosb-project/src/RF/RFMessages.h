@@ -4,24 +4,25 @@
 #include "Config.h"
 
 /**
- * Radio message structure. 
+ * Radio message structure.
  */
-typedef nx_struct reliable_msg {
-    nx_uint8_t data[RF_PAYLOAD_SIZE];
-    nx_uint16_t nr;
-} reliable_msg_t;
+typedef nx_struct RFDataMsg {
+  nx_uint8_t data[RF_PAYLOAD_SIZE - 2];
+  nx_uint16_t nr;
+}
+RFDataMsg_t;
 
 /**
- * Ack message structure. 
+ * Ack message structure.
  */
-typedef nx_struct ack_msg {
-} ack_msg_t; 
+typedef nx_struct RFAckMsg {}
+RFAckMsg_t;
 
-/**
- * Specifies the identifier for the Active message. Sender and receiver must use the same.
- */
 enum {
-  AM_TYPE = 4
+  AM_RFDATAMSG = 4,
+  AM_RFACKMSG = 5,
+
+  ACK_TIMEOUT = 1000
 };
 
 #endif /* RFMESSAGES_H */
