@@ -31,17 +31,20 @@ implementation {
     _start = 0;
     _end = 0;
   }
-  
+
+  /**
+   * Returns number of available bytes.
+   *
+   * @return Returns the number of available bytes.
+   */
   inline uint16_t available() {
     if (_start <= _end)
       return _end - _start;
     else
-      return SIZE - _start + _end;	
+      return SIZE - _start + _end;
   }
 
-  command uint16_t CircularBufferRead.available() {
-    return available();
-  }
+  command uint16_t CircularBufferRead.available() { return available(); }
 
   command error_t CircularBufferRead.read(uint8_t * byte) {
     if (_start == _end) {
@@ -66,13 +69,16 @@ implementation {
     }
   }
 
-  inline uint16_t free() {
-    return SIZE - available() - 1;
+  /**
+   * Returns free space in number of bytes.
+   *
+   * @return Returns the free space in number of bytes.
+   */
+  inline uint16_t free() { 
+    return SIZE - available() - 1; 
   }
 
-  command uint16_t CircularBufferWrite.free() {
-    return free();
-  }
+  command uint16_t CircularBufferWrite.free() { return free(); }
 
   command error_t CircularBufferWrite.write(uint8_t byte) {
     if (_end + 1 == _start || (_end + 1 == SIZE && _start == 0)) {

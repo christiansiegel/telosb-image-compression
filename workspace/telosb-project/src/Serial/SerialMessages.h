@@ -1,14 +1,14 @@
 #ifndef SERIALMESSAGES_H
 #define SERIALMESSAGES_H
 
-#define SERIAL_PAYLOAD_SIZE 16 // don't change this!
+#define SERIAL_PAYLOAD_SIZE 16  // don't change this!
 
-typedef nx_struct SerialDataMsg {
-  nx_uint8_t data[SERIAL_PAYLOAD_SIZE];
+typedef nx_struct SerialDataMsg { 
+  nx_uint8_t data[SERIAL_PAYLOAD_SIZE]; 
 } SerialDataMsg_t;
 
-typedef nx_struct SerialCmdMsg {
-  nx_uint8_t cmd;
+typedef nx_struct SerialCmdMsg { 
+  nx_uint8_t cmd; 
 } SerialCmdMsg_t;
 
 enum {
@@ -19,7 +19,7 @@ enum {
   CMD_FLASH_START = 1,
   CMD_FLASH_ACK = 2,
   CMD_FLASH_END = 3,
-  
+
   CMD_RF_REQUEST = 10,
   CMD_RF_START = 11,
   CMD_RF_END = 12

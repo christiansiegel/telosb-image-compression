@@ -65,9 +65,9 @@ implementation {
   event void FlashReader.readDone(error_t error) {
     PRINTLN("flash read done => result: %d", error);
   }
-  
+
   event void Serial.sendDone(error_t error) {
-  	PRINTLN("serial send done => result: %d", error);
+    PRINTLN("serial send done => result: %d", error);
     setState(IDLE);
     call Serial.flashAccessEnd();
   }
@@ -80,9 +80,6 @@ implementation {
       call Compression.decompress();
 #endif
       call FlashWriter.write();
-
-      // TODO: Maybe we should call this first, when transmission actually takes
-      // place?
       call Serial.rfTransmissionStart();
     }
   }

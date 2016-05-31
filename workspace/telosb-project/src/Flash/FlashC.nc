@@ -50,7 +50,7 @@ implementation {
                                    _bufferSize - _bufferMiddle  // size
                                    ) == SUCCESS;
     } else {
-    	posted = FALSE;
+      posted = FALSE;
     }
     if (!posted) post readTask();
   }
@@ -71,7 +71,7 @@ implementation {
                                      _bufferSize - _bufferMiddle  // size
                                      ) == SUCCESS;
     } else {
-        posted = FALSE;
+      posted = FALSE;
     }
     if (!posted) post writeTask();
   }
@@ -120,7 +120,7 @@ implementation {
     _running = FALSE;
     signal FlashWriter.writeDone(error);
   }
-  
+
   /**
    * Init state variables for read/write process.
    */

@@ -33,7 +33,7 @@ implementation {
   uint8_t y;
 
   /**
-   * Buffer for single encoded bits until byte is full.
+   * Buffer for single encoded bits until new byte is read.
    */
   uint8_t _bitBuf;
 
@@ -43,25 +43,22 @@ implementation {
   uint8_t _bitBufPos;
 
   /**
- * Reads byte from @see m_encoded_buf and
- * increases @see m_encoded_buf_pos to next byte
- * position.
- * Attention: If @see read_bit() is used be aware
- *            that it reads a whole byte and stores
- *            it in @see m_encoded_bit_buf.
- */
+   * Reads byte from circular buffer.
+   * Attention: If @see readBit() is used be aware that it reads a whole byte
+   * and stores it in @see _bitBuf.
+   */
   inline uint8_t readByte() {
     static uint8_t byte;
-    // TODO if returns FAIL we get an invalid byte!!
-    call InBuffer.read(&byte); // adds 8 seconds
+    // TODO: if returns FAIL we get an invalid byte!! Only the case on worst
+    // case images.
+    call InBuffer.read(&byte);
     return byte;
   }
 
   /**
-  * Reads bit from @see m_encoded_bit_buf and
-  * fetches a new byte from @see m_encoded_buf if
-  * bit buffer was read completely.
-  */
+   * Reads bit from @see _bitBuf and fetches a new byte from circular buffer if
+   * bit buffer was read completely.
+   */
   inline uint8_t readBit() {
     if (_bitBufPos == 0) {
       _bitBuf = readByte();
@@ -88,6 +85,14 @@ implementation {
     return res;
   }
 
+  /**
+   * Binary decodes the next byte from the input buffer and returns the decoded
+   * value.
+   *
+   * @param range The range of input parameters (possible length of the binary
+   * code increases with range).
+   * @returns The decoded byte.
+   */
   inline uint8_t binaryDecode(uint16_t range) {
     static uint8_t bits, thresh, i;
     static uint16_t a;
@@ -107,13 +112,12 @@ implementation {
   }
 
   /**
-   * Binary encodes the input parameter <code>a</code> and writes the encoded
-   * value to the output. Values in the middle of the range are encoded with
-   * less bits.
+   * Binary decodes the next byte from the input buffer and returns the decoded
+   * value. Values in the middle of the range are encoded with less bits.
    *
-   * @param a     The input parameter.
    * @param range The range of input parameters (possible length of the binary
    * code increases with range).
+   * @returns The decoded byte.
    */
   inline uint8_t adjustedBinaryDecode(uint16_t range) {
     static uint8_t bits, thresh, i;
@@ -139,10 +143,10 @@ implementation {
   }
 
   /**
-   * Unary encodes the input parameter <code>a</code> and writes the encoded
-   * value to the output.
+   * Unary decodes the next byte from the input buffer and returns the decoded
+   * value.
    *
-   * @param a     The input parameter.
+   * @returns The decoded byte.
    */
   inline uint16_t unaryDecode() {
     static uint16_t a;
@@ -152,11 +156,11 @@ implementation {
   }
 
   /**
-   * Golomb-rice encodes the input parameter <code>a</code> and writes the
-   * encoded value to the output.
+   * Golomb-rice decodes the next byte from the input buffer and returns the
+   * decoded value.
    *
-   * @param a     The input parameter.
    * @param k     The parameter K of the golomb-rice code.
+   * @returns The decoded byte.
    */
   inline uint8_t golombRiceDecode(uint8_t k) {
     static uint8_t a;
@@ -166,7 +170,7 @@ implementation {
   }
 
   /**
-   * Compress the next block of pixels and write them to the output.
+   * Decompress the next block of pixels and write them to the output buffer.
    */
   inline void decompressBlock() {
     // current pixel value
@@ -197,7 +201,7 @@ implementation {
     // Check if there is enough available data in the input buffer to decode a
     // block.
     // TODO: Worst case image can use an input that is larger than the
-    // output. This would cause the readByte() to loop until data is available.
+    // output. This would cause the readByte() to read a faulty byte.
     if (call InBuffer.available() < COMPRESS_BLOCK_SIZE) return;
 
     // iterate over all image pixels
@@ -261,7 +265,7 @@ implementation {
 #error "COMPRESS_BLOCK_SIZE has to be a multiple of 8 when using TRUNCATE_1!"
 #endif
   /**
-   * Compress the next block of pixels and write them to the output.
+   * Decompress the next block of pixels and write them to the output buffer.
    */
   inline void decompressBlock() {
     static uint8_t j, sliced;
@@ -286,7 +290,7 @@ implementation {
 #error "COMPRESS_BLOCK_SIZE has to be a multiple of 4 when using TRUNCATE_2!"
 #endif
   /**
-   * Compress the next block of pixels and write them to the output.
+   * Decompress the next block of pixels and write them to the output buffer.
    */
   inline void decompressBlock() {
     static uint8_t j, sliced;
@@ -311,15 +315,14 @@ implementation {
 #error "COMPRESS_BLOCK_SIZE has to be a multiple of 2 when using TRUNCATE_4!"
 #endif
   /**
-   * Decompress the next block of pixels and write them to the output.
+   * Decompress the next block of pixels and write them to the output buffer.
    */
   inline void decompressBlock() {
     static uint8_t tmpIn[COMPRESS_BLOCK_SIZE / 2];
     static uint8_t tmpOut[COMPRESS_BLOCK_SIZE];
     static uint16_t iOut, iIn;
-    
+
     if (call InBuffer.readBlock(tmpIn, sizeof(tmpIn)) == SUCCESS) {
-    	
       for (iIn = iOut = 0; iOut < COMPRESS_BLOCK_SIZE; iIn++) {
         tmpOut[iOut++] = tmpIn[iIn] & 0xF0;
         tmpOut[iOut++] = tmpIn[iIn] << 4;
@@ -344,7 +347,7 @@ implementation {
       // (Check if enough data in input buffer is done in decompressBlock())
       decompressBlock();
     }
-    // Re-post task until compression is done
+    // Re-post task until decompression is done
     post decompressTask();
   }
 
@@ -364,7 +367,7 @@ implementation {
       _bitBuf = 0;
       _bitBufPos = 0;
 #endif
-      // start compression task
+      // start decompression task
       post decompressTask();
       return SUCCESS;
     }

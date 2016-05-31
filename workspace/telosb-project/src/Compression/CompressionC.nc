@@ -119,9 +119,9 @@ implementation {
    * code increases with range).
    */
   inline void binaryEncode(uint16_t a, uint16_t range) {
-  	static int8_t bits;
-  	static uint8_t thresh;
-  	
+    static int8_t bits;
+    static uint8_t thresh;
+
     bits = ceillog2(range);
     thresh = (uint8_t)((1 << bits) - range);
 
@@ -143,9 +143,9 @@ implementation {
    * code increases with range).
    */
   inline void adjustedBinaryEncode(uint16_t a, uint16_t range) {
-  	static int8_t bits;
+    static int8_t bits;
     static uint8_t thresh;
-    
+
     bits = ceillog2(range);
     thresh = (uint8_t)((1 << bits) - range);
 
