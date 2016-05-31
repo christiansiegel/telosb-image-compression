@@ -23,7 +23,7 @@ public class SerialComm implements MessageListener {
   private static final byte CMD_RF_START = 11;
   private static final byte CMD_RF_END = 12;
   
-  private static final int DATA_PAYLOAD_SIZE = 16;
+  private static final int DATA_PAYLOAD_SIZE = 64;
 
   private static boolean senderNode;
 
