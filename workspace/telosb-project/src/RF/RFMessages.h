@@ -7,7 +7,14 @@
  * Radio message structure.
  */
 typedef nx_struct RFDataMsg {
+  /**
+   * Chunk of compressed image data.
+   */
   nx_uint8_t data[RF_PAYLOAD_SIZE - 2];
+  /**
+   * Packet counter starting from 0. The last packet is marked with a number of
+   * 0xFFFF.
+   */
   nx_uint16_t nr;
 }
 RFDataMsg_t;

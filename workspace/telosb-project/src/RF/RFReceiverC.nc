@@ -14,11 +14,33 @@ module RFReceiverC {
   provides interface RFReceiver;
 }
 implementation {
+  /**
+   * Module is currently running.
+   */
   bool _running;
+
+  /**
+   * Counts received packet.
+   * (Used to drop packets that are received twice.)
+   */
   uint16_t _pktCount;
-  message_t _pkt;
+
+  /**
+   * Last received chunk of data.
+   */
   uint8_t _chunk[RF_PAYLOAD_SIZE - 2];
+
+  /**
+   * Module is currently handling a received packet (writing to buffer and
+   * sending ACK).
+   * (Used to drop packets that are received during this period.)
+   */
   bool _handling;
+
+  /**
+   * The last received packet was the last message of the transmission.
+   * (Used to finish receiving after this one is acknowledged.)
+   */
   bool _last;
 
   command error_t RFReceiver.receive() {
@@ -36,7 +58,11 @@ implementation {
     }
   }
 
+  /**
+   * Sends ACK for last received packet.
+   */
   task void sendAck() {
+    static message_t _pkt;
     call AMSend.getPayload(&_pkt, sizeof(RFAckMsg_t));
     if (call AMSend.send(AM_BROADCAST_ADDR, &_pkt, sizeof(RFAckMsg_t)) !=
         SUCCESS) {
@@ -44,6 +70,10 @@ implementation {
     }
   }
 
+  /**
+   * Saves last received packet to buffer.
+   * Triggers sending of ACK after saving.
+   */
   task void saveTask() {
     if (call OutBuffer.writeBlock(_chunk, sizeof(_chunk)) == SUCCESS) {
       post sendAck();
@@ -52,6 +82,9 @@ implementation {
     }
   }
 
+  /**
+   * Handles received data packet.
+   */
   event message_t* AMReceive.receive(message_t * msg, void* payload,
                                      uint8_t len) {
     if (_handling) {
@@ -80,7 +113,6 @@ implementation {
       _pktCount++;
       post saveTask();
     }
-
     return msg;
   }
 
