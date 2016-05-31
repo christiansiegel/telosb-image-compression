@@ -85,7 +85,7 @@ implementation {
   }
 
   event void Rf.receiveDone(error_t error) {
-    PRINTLN("sending done => result: %d", error);
+    PRINTLN("receiving done => result: %d", error);
   }
 
 #ifndef NO_COMPRESSION
