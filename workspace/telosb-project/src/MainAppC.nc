@@ -1,6 +1,7 @@
 #include "StorageVolumes.h"
 #include "Defs.h"
 #include "SerialMessages.h"
+#include "RFMessages.h"
 
 configuration MainAppC {}
 implementation {

@@ -22,6 +22,6 @@ typedef nx_struct ack_msg {
  */
 enum {
   AM_TYPE = 4
-}
+};
 
 #endif /* RFMESSAGES_H */
