@@ -1,6 +1,6 @@
 #ifndef DEFS_H
 #define DEFS_H
-
+#define TOSH_DATA_LENGTH 100
 #include "Config.h"
 
 #if !(defined(FELICS) ^ defined(TRUNCATE_1) ^ defined(TRUNCATE_2) ^ \
@@ -96,5 +96,11 @@ typedef nx_struct reliable_msg_t {
  */
 typedef nx_struct ack_msg_t {
 	} ack_msg_t; 
-
+/**
+ * ACK message timeout
+ * */	
+enum 
+{
+	Ack_Timeout_Period = 50
+};
 #endif /* DEFS_H */

@@ -36,6 +36,7 @@ implementation {
   components new AMSenderC(AM_TYPE);
   components new AMReceiverC(AM_TYPE);
   components ActiveMessageC;
+  components new TimerMilliC() as Timer0;
     
   Serial.AMDataReceive->SerialDataReceiver;
   
@@ -44,6 +45,7 @@ implementation {
   Rf.Packet->AMSenderC;
   Rf.AMControl->ActiveMessageC;
   Rf.AckReceiver-> AMReceiverC;
+  Rf.TimeoutTimer -> Timer0.Timer;
   
 #ifndef NO_COMPRESSION
   components CompressionC as Compression;

@@ -44,7 +44,7 @@ implementation {
     call AMControl.start();
   }
 
-  event void AMControl.startDone(error_t error) {}
+  event void AMControl.startDone(error_t error) {signal SerialControl.rfTransmissionOk();}
 
   event void AMControl.stopDone(error_t error) {}
 

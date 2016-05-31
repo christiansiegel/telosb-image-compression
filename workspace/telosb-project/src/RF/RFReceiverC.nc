@@ -35,6 +35,7 @@ implementation
 		    // update the bytecount if we succesfully wrote a block
       		if (result == SUCCESS)
       		{
+      			PRINTLN("Processing Received data");
       			// Get the payload for the ack message
       			ack_msg_t* ReceivedPacket = (ack_msg_t*)call Packet.getPayload(&pkt, sizeof(ack_msg_t));
       			// Send an ack message
@@ -85,7 +86,8 @@ implementation
 	  			
       			reliable_msg_t* ReceivedPacket = (reliable_msg_t*)call Packet.getPayload(&pkt, sizeof(reliable_msg_t));
 	  			LastReceivedData = ReceivedPacket->data;
-	  			call Leds.led1Toggle();
+	  			PRINTLN("Received Packet");
+	  			// We should be calling the receivetask here
 	  		}
 	  	}
 	  	return msg;
