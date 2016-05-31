@@ -1,0 +1,6 @@
+808f8cc5124b9fdddf689657c3c39ac4  img/aerial.bin
+cbeec945ecf80f64cbe17130b0eda1da  img/airplane.bin
+a4f0b14735e0c19c491b51eaf38da680  img/chemicalplant.bin
+b7c5000d9025cabada1678ece79e8321  img/clock.bin
+981280bbe8f5c70b26f1744810d700b4  img/moonsurface.bin
+1b082ffaa06df3c6f75e4ba35fd03bd6  img/resolutionchart.bin
