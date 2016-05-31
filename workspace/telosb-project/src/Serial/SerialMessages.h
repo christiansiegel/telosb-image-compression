@@ -1,7 +1,7 @@
 #ifndef SERIALMESSAGES_H
 #define SERIALMESSAGES_H
 
-#define SERIAL_PAYLOAD_SIZE 16  // don't change this!
+#define SERIAL_PAYLOAD_SIZE 64
 
 typedef nx_struct SerialDataMsg { 
   nx_uint8_t data[SERIAL_PAYLOAD_SIZE]; 

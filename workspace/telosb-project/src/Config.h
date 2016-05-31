@@ -19,13 +19,13 @@
 /**
  * Use Felics lossless compression.
  */
-//#define FELICS
+#define FELICS
 
 /**
  * Use lossy compression that truncates
  * the LSB of every image byte.
  */
-#define TRUNCATE_1
+//#define TRUNCATE_1
 
 /**
  * Use lossy compression that truncates
@@ -59,9 +59,9 @@
 
 /**
  * Package payload size of the RF package.
- * (114 byte is the maximum package payload for the telosb)
+ * (113 byte is the maximum package payload for the telosb)
  */
-#define RF_PAYLOAD_SIZE 90
+#define RF_PAYLOAD_SIZE 113
 
 /**
  * Turn printf debug over serial port on.
@@ -72,10 +72,5 @@
  * Show current state on LEDs.
  */
 #define LEDS_SHOW_STATE
-
-/**
- * Specifies the identifier for the Active message. Sender and receiver must use the same.
- */
-#define AM_TYPE 4
 
 #endif /* CONFIG_H */

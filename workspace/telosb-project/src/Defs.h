@@ -1,6 +1,8 @@
 #ifndef DEFS_H
 #define DEFS_H
-#define TOSH_DATA_LENGTH 100
+
+#define TOSH_DATA_LENGTH 118
+
 #include "Config.h"
 
 #if !(defined(FELICS) ^ defined(TRUNCATE_1) ^ defined(TRUNCATE_2) ^ \
@@ -85,22 +87,4 @@ enum {
 
 #endif
 
-/**
- * Radio message structure. 
- */
-typedef nx_struct reliable_msg_t {
-	nx_uint8_t data[RF_PAYLOAD_SIZE];
-} reliable_msg_t;
-/**
- * Ack message structure. 
- */
-typedef nx_struct ack_msg_t {
-	} ack_msg_t; 
-/**
- * ACK message timeout
- * */	
-enum 
-{
-	Ack_Timeout_Period = 50
-};
 #endif /* DEFS_H */

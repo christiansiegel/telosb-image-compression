@@ -23,7 +23,7 @@ public class SerialComm implements MessageListener {
   private static final byte CMD_RF_START = 11;
   private static final byte CMD_RF_END = 12;
   
-  private static final int DATA_PAYLOAD_SIZE = 16;
+  private static final int DATA_PAYLOAD_SIZE = 64;
 
   private static boolean senderNode;
 
@@ -144,7 +144,7 @@ public class SerialComm implements MessageListener {
   
   public void sendNextChunk() {
     if(chunkNr >= 65536 / DATA_PAYLOAD_SIZE) {
-      System.out.println("Image sent!"); 
+      System.out.print("\rImage sent!\n"); 
       return;
     }
   
@@ -200,7 +200,7 @@ public class SerialComm implements MessageListener {
         sendAck();
         
         if(chunkNr >= 65536 / DATA_PAYLOAD_SIZE) {
-          System.out.println("Image received!");
+          System.out.print("\rImage received!\n");
           try {
             imageToFile(imageFileName, image);
           } catch (IOException exception) {
@@ -217,11 +217,21 @@ public class SerialComm implements MessageListener {
     System.err.println("-> transfer image from mote:         TestSerial <source> r <filename>");
     System.err.println("-> transfer image from mote to mote: TestSerial <source> t");
     System.err.println("");
-    System.err.println("e.g.: SerialComm serial@/dev/ttyUSB0:telosb w img/aerial.bin\n");
+    System.err.println("e.g.: SerialComm serial@/dev/ttyUSB0:telosb w img/aerial.tiff");
+    System.err.println("      SerialComm serial@/dev/ttyUSB0:telosb t");
+    System.err.println("      SerialComm serial@/dev/ttyUSB0:telosb r aerial-received.png\n");
   }
   
   private static byte[] imageFromFile(String fileName) throws IOException { 
-		File file = new File(fileName);
+    try {
+      Process p = Runtime.getRuntime().exec("python img2bin.py " + fileName + " /tmp/binaryimage.bin");
+      p.waitFor();
+    } catch (Exception exception) {
+      System.err.println("Exception thrown when converting image. Exiting.");
+      System.err.println(exception);
+    } 
+  
+		File file = new File("/tmp/binaryimage.bin");
     FileInputStream fis = new FileInputStream(file);
     ByteArrayOutputStream bos = new ByteArrayOutputStream();
     byte[] buf = new byte[1024];
@@ -240,13 +250,27 @@ public class SerialComm implements MessageListener {
   }
   
   private static void imageToFile(String fileName, byte[] bytes) throws IOException {
-    FileOutputStream fos = new FileOutputStream(fileName);
+    FileOutputStream fos = new FileOutputStream("/tmp/binaryimage.bin");
     fos.write(bytes);
     fos.close();
+    
+    try {
+      Process p = Runtime.getRuntime().exec("python bin2img.py /tmp/binaryimage.bin " + fileName);
+      p.waitFor();
+    } catch (Exception exception) {
+      System.err.println("Exception thrown when converting image. Exiting.");
+      System.err.println(exception);
+    } 
+    
     System.out.println("Saved image to " + fileName);
   }
   
   public static void main(String[] args) throws Exception {  
+    if(args.length < 2) {
+      usage();
+      return;
+    }
+  
     String source = args[0];
 
     PhoenixSource phoenix;
