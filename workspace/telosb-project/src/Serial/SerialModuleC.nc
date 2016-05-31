@@ -44,7 +44,10 @@ implementation {
     call AMControl.start();
   }
 
-  event void AMControl.startDone(error_t error) {signal SerialControl.rfTransmissionOk();}
+  event void AMControl.startDone(error_t error) {
+    // uncomment this to auto start transmission after boot
+    //signal SerialControl.rfTransmissionOk();
+  }
 
   event void AMControl.stopDone(error_t error) {}
 
