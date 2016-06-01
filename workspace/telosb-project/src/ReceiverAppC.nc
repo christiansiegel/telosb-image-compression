@@ -12,7 +12,6 @@ module ReceiverAppC {
     interface Decompression as Compression;
 #endif
     interface RFReceiver as Rf;
-    interface CircularBufferWrite as FlashBuffer;
   }
 }
 implementation {

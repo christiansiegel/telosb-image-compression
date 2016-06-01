@@ -12,7 +12,6 @@ module SenderAppC {
     interface Compression;
 #endif
     interface RFSender as Rf;
-    interface CircularBufferWrite as FlashBuffer;
   }
 }
 implementation {
