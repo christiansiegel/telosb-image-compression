@@ -29,7 +29,7 @@ enum {
   AM_RFDATAMSG = 4,
   AM_RFACKMSG = 5,
 
-  ACK_TIMEOUT = 1000
+  ACK_TIMEOUT = 100
 };
 
 #endif /* RFMESSAGES_H */
