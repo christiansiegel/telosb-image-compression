@@ -434,8 +434,6 @@ void benchmark()
 		strcpy_s(filename, sizeof(filename), REAL_TEST_IMG_PATH);
 		strcat_s(filename, sizeof(filename), img_name[i]);
 
-		
-
 		fopen_s(&fp, filename, "rb");
 		fread(img_orig, sizeof(img_orig), 1, fp);
 		fclose(fp);
@@ -467,7 +465,7 @@ MU_TEST_SUITE(test_suite)
 
 	MU_RUN_TEST(test_encode_decode_black);
 	MU_RUN_TEST(test_encode_decode_white);
-	//MU_RUN_TEST(test_encode_decode_mix);
+	MU_RUN_TEST(test_encode_decode_mix);
 }
 
 int main()
