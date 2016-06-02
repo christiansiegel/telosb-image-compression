@@ -22,7 +22,7 @@
 %frontmatter
 \pagestyle{empty} %disable headers and footers
 \pagenumbering{roman} %use roman page numbering in the frontmatter
-%\input{sections/frontpage.tex}
+\input{sections/frontpage.tex}
 \cleardoublepage
 \pdfbookmark[0]{Contents}{label:contents}
 \pagestyle{fancy} %enable headers and footers again
@@ -31,12 +31,12 @@
 \cleardoublepage
 %mainmatter
 \pagenumbering{arabic} %use arabic page numbering in the mainmatter
-%\input{sections/introduction.tex}
+\input{sections/introduction.tex}
 \input{sections/theory.tex}
-%\input{sections/implementation.tex}
-%\input{sections/conclusion.tex}
+\input{sections/implementation.tex}
+\input{sections/conclusion.tex}
 \bibliography{bib/mybib}
 \label{bib:mybiblio}
 \appendix
-%\input{sections/appendix.tex}
+\input{sections/appendix.tex}
 \end{document}
